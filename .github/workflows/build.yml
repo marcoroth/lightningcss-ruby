@@ -40,7 +40,7 @@ jobs:
 
       - name: Check sig/ matches the inline annotations
         run: |
-          bundle exec rbs-inline --opt-out --output=sig/ lib/
+          bundle exec rake rbs
           git diff --exit-code sig/ || {
             echo "::error::sig/ is out of date. Run: bundle exec rake rbs"
             exit 1
@@ -60,5 +60,15 @@ jobs:
         working-directory: rust
 
       - name: Run Clippy
-        run: cargo clippy --release -- -D warnings
+        run: cargo clippy --release --all-targets -- -D warnings
         working-directory: rust
+
+      - name: Run Rust tests
+        run: cargo test --release
+        working-directory: rust
+
+      - name: Check licenses
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          manifest-path: rust/Cargo.toml
+          command: check licenses
