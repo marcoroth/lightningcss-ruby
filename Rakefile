@@ -2,7 +2,6 @@
 
 require "bundler/gem_tasks"
 require "rake/testtask"
-require "rubocop/rake_task"
 
 begin
   require "rake/extensiontask"
@@ -115,7 +114,16 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList["test/**/*_test.rb"]
 end
 
-RuboCop::RakeTask.new
+begin
+  require "rubocop/rake_task"
+
+  RuboCop::RakeTask.new
+rescue LoadError => e
+  desc "RuboCop task not available (rubocop not installed)"
+  task :rubocop do
+    abort "rubocop is required: #{e.message}\n\nRun: bundle install"
+  end
+end
 
 desc "Generate RBS signatures from the inline annotations"
 task :rbs do
