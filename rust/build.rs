@@ -19,6 +19,16 @@ fn main() {
   println!("cargo:rerun-if-changed={}", lock_path.display());
 
   println!(
+    "cargo:rerun-if-changed={}",
+    PathBuf::from(&crate_dir).join("src").display()
+  );
+
+  println!(
+    "cargo:rerun-if-changed={}",
+    PathBuf::from(&crate_dir).join("cbindgen.toml").display()
+  );
+
+  println!(
     "cargo:rustc-env=LIGHTNINGCSS_VERSION={}",
     locked_version(&lock_path, "lightningcss")
   );

@@ -4,8 +4,10 @@
 //! `parcel_selectors` stores a selector in reverse match order, so `Selector::append` lands the
 //! fragment in the last compound and before any pseudo-element, which is where a scope belongs:
 //!
-//!     .card .title    ->  .card .title[data-herb-scope-abc]
-//!     .item::before   ->  .item[data-herb-scope-abc]::before
+//! ```text
+//! .card .title    ->  .card .title[data-herb-scope-abc]
+//! .item::before   ->  .item[data-herb-scope-abc]::before
+//! ```
 //!
 //! A fragment is anything that parses as one compound selector, so an attribute and a `:where()`
 //! carrying its own alternatives are both expressible.
