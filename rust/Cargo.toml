@@ -1,0 +1,24 @@
+[workspace]
+
+[package]
+name = "lightningcss-ffi"
+version = "0.1.0"
+edition = "2021"
+authors = ["Marco Roth <marco.roth@intergga.ch>"]
+description = "C FFI bindings for Lightning CSS, used by the lightningcss gem"
+license = "MIT"
+repository = "https://github.com/marcoroth/lightningcss-ruby"
+publish = false
+
+[lib]
+name = "lightningcss_ffi"
+path = "src/lib.rs"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+lightningcss = { version = "1.0.0-alpha.68", features = ["visitor"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[build-dependencies]
+cbindgen = "0.28"

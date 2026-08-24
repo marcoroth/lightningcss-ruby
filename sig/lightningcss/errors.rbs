@@ -1,0 +1,15 @@
+# Generated from lib/lightningcss/errors.rb with RBS::Inline
+
+module LightningCSS
+  class Error < StandardError
+  end
+
+  class ParseError < Error
+  end
+
+  class OptionError < Error
+  end
+
+  class BundleError < Error
+  end
+end

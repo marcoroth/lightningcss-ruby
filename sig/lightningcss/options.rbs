@@ -1,0 +1,38 @@
+# Generated from lib/lightningcss/options.rb with RBS::Inline
+
+module LightningCSS
+  # The options a call was given, on their way to the native library.
+  #
+  # Lightning CSS reads them as JSON, so this is where a Ruby hash becomes one, and where an option
+  # nobody knows is refused. Refusing early is the point: an option the native side does not read
+  # would otherwise be accepted and quietly do nothing.
+  #
+  #     LightningCSS::Options.new(minify: true).to_json  #=> "{\"minify\":true}"
+  class Options
+    KNOWN: Array[Symbol]
+
+    STYLE_ATTRIBUTE: Array[Symbol]
+
+    attr_reader to_h: Hash[Symbol, untyped]
+
+    # : (Hash[Symbol, untyped], ?allowed: Array[Symbol], ?subject: String) -> String
+    def self.serialize: (Hash[Symbol, untyped], ?allowed: Array[Symbol], ?subject: String) -> String
+
+    # : (?allowed: Array[Symbol], ?subject: String, **untyped) -> void
+    def initialize: (?allowed: Array[Symbol], ?subject: String, **untyped) -> void
+
+    # : (?untyped) -> String
+    def to_json: (?untyped) -> String
+
+    # : () -> String
+    def inspect: () -> String
+
+    private
+
+    # : (Array[Symbol], Array[Symbol], String) -> void
+    def validate!: (Array[Symbol], Array[Symbol], String) -> void
+
+    # : (Hash[Symbol, untyped]) -> Hash[Symbol, untyped]
+    def normalize: (Hash[Symbol, untyped]) -> Hash[Symbol, untyped]
+  end
+end

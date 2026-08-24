@@ -1,0 +1,34 @@
+# Generated from lib/lightningcss/result.rb with RBS::Inline
+
+module LightningCSS
+  # What a transform produced.
+  #
+  # `exports` is only filled in when the stylesheet was compiled as a CSS module, and maps every
+  # name as it was written to the name it was compiled to. A transform that was not asked for a
+  # CSS module has none, and neither does a style attribute, which has no names to compile.
+  #
+  # `warnings` holds what Lightning CSS understood well enough to keep but not well enough to act
+  # on, which is everything it would otherwise have dropped without saying so.
+  class Result
+    attr_reader code: String
+
+    attr_reader exports: Hash[String, String]?
+
+    attr_reader warnings: Array[String]
+
+    # : (String) -> LightningCSS::Result
+    def self.from_json: (String) -> LightningCSS::Result
+
+    # : (code: String, warnings: Array[String], ?exports: Hash[String, String]?) -> void
+    def initialize: (code: String, warnings: Array[String], ?exports: Hash[String, String]?) -> void
+
+    # : () -> bool
+    def warnings?: () -> bool
+
+    # : () -> String
+    def to_s: () -> String
+
+    # : () -> String
+    def inspect: () -> String
+  end
+end

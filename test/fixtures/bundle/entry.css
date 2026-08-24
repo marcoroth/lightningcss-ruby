@@ -1,0 +1,4 @@
+@import "colors.css";
+@import "nested/layout.css";
+
+.entry { color: var(--brand); }

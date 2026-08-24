@@ -11,6 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "An extremely fast CSS parser, transformer, bundler, and minifier."
   spec.description = "Ruby bindings for Lightning CSS, an extremely fast CSS parser, transformer, bundler, and minifier."
   spec.homepage = "https://github.com/marcoroth/lightningcss-ruby"
+  spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
   spec.require_paths = ["lib"]
 
@@ -22,8 +23,21 @@ Gem::Specification.new do |spec|
   spec.files = Dir[
     "lightningcss.gemspec",
     "LICENSE.txt",
+    "licenses/*.txt",
+    "licenses/README.md",
     "README.md",
     "lib/**/*.rb",
-    "sig/**/*.rbs"
+    "sig/**/*.rbs",
+    "ext/lightningcss/extconf.rb",
+    "ext/lightningcss/lightningcss.c",
+    "ext/lightningcss/include/**/*.h",
+    "rust/Cargo.toml",
+    "rust/Cargo.lock",
+    "rust/build.rs",
+    "rust/cbindgen.toml",
+    "rust/rustfmt.toml",
+    "rust/src/**/*.rs"
   ]
+
+  spec.extensions = ["ext/lightningcss/extconf.rb"]
 end

@@ -1,3 +1,31 @@
+# Generated from lib/lightningcss.rb with RBS::Inline
+
+# Ruby bindings for Lightning CSS.
+#
+#     LightningCSS.transform(".a { color: red }", minify: true).code
+#     #=> ".a{color:red}"
+#
+# Every option is passed through to Lightning CSS as written, except `scope`, which narrows each
+# rule by a selector fragment so a stylesheet only applies where that fragment matches:
+#
+#     LightningCSS.transform(".title { color: red }", scope: "[data-scope-abc]").code
+#     #=> ".title[data-scope-abc]{color:red}"
+#
+# `LightningCSS::Options` is what the options are read by, and `LightningCSS::Transformer` holds a
+# set of them to reuse across many stylesheets.
 module LightningCSS
-  VERSION: String
+  # : (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+  def self.transform: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+
+  # : (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+  def self.bundle: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+
+  # : (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?) -> LightningCSS::Result
+  def self.transform_style_attribute: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?) -> LightningCSS::Result
+
+  # : (String, ?filename: String?, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> String
+  def self.minify: (String, ?filename: String?, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> String
+
+  # : () -> String
+  def self.native_version: () -> String
 end

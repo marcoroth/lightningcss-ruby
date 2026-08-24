@@ -1,0 +1,5 @@
+# Generated from lib/lightningcss/version.rb with RBS::Inline
+
+module LightningCSS
+  VERSION: ::String
+end

@@ -1,0 +1,26 @@
+# Generated from lib/lightningcss/backend.rb with RBS::Inline
+
+module LightningCSS
+  module Backend
+    module Unavailable
+      # : (String, String) -> String
+      def transform: (String, String) -> String
+
+      # : (String, String) -> String
+      def transform_style_attribute: (String, String) -> String
+
+      # : (String, String) -> String
+      def bundle: (String, String) -> String
+
+      # : () -> String
+      def version: () -> String
+
+      private
+
+      # : (Symbol?) -> bot
+      def unavailable: (Symbol?) -> bot
+    end
+
+    extend Unavailable
+  end
+end
