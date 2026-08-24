@@ -11,6 +11,7 @@ begin
     "aarch64-linux-gnu",
     "aarch64-linux-musl",
     "arm-linux-gnu",
+    "arm-linux-musl",
     "arm64-darwin",
     "x86_64-darwin",
     "x86_64-linux-gnu",
@@ -21,6 +22,7 @@ begin
     "aarch64-linux-gnu" => "aarch64-linux",
     "aarch64-linux-musl" => "aarch64-linux-musl",
     "arm-linux-gnu" => "arm-linux",
+    "arm-linux-musl" => "arm-linux-musl",
     "arm64-darwin" => "arm64-darwin",
     "x86_64-darwin" => "x86_64-darwin",
     "x86_64-linux-gnu" => "x86_64-linux",
@@ -36,6 +38,8 @@ begin
     "x86_64-darwin" => "x86_64-apple-darwin",
     "x86_64-linux-gnu" => "x86_64-unknown-linux-gnu",
     "x86_64-linux-musl" => "x86_64-unknown-linux-musl",
+    "x86-linux-gnu" => "i686-unknown-linux-gnu",
+    "x86-linux-musl" => "i686-unknown-linux-musl",
   }.freeze
 
   Rake::ExtensionTask.new do |ext|
@@ -84,6 +88,7 @@ begin
                      when /aarch64.*linux.*gnu/ then "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc"
                      when /aarch64.*linux.*musl/ then "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc"
                      when /armv7.*gnueabihf/ then "CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc"
+                     when /armv7.*musleabihf/ then "CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER=arm-linux-musleabihf-gcc"
                      else ""
                      end
 
