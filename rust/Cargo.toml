@@ -2,7 +2,7 @@
 
 [package]
 name = "lightningcss-ffi"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Marco Roth <marco.roth@intergga.ch>"]
 description = "C FFI bindings for Lightning CSS, used by the lightningcss gem"
