@@ -13,25 +13,52 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
-    strategy:
-      matrix:
-        ruby:
-          - '4.0.6'
+    name: Test
 
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
+          ruby-version: .ruby-version
           bundler-cache: true
+
+      - name: Run Test
+        run: bundle exec rake test
 
       - name: Run RuboCop
         run: bundle exec rubocop
 
-      - name: Run Test
-        run: bundle exec rake test
+      - name: Check sig/ matches the inline annotations
+        run: |
+          bundle exec rbs-inline --opt-out --output=sig/ lib/
+          git diff --exit-code sig/ || {
+            echo "::error::sig/ is out of date. Run: bundle exec rake rbs"
+            exit 1
+          }
+
+      - name: Install RBS collection
+        run: bundle exec rbs collection install
+
+      - name: Validate RBS
+        run: bundle exec rbs --repo .gem_rbs_collection -I sig validate
+
+      - name: Run Steep
+        run: bundle exec steep check
+
+      - name: Check formatting
+        run: cargo fmt --check
+        working-directory: rust
+
+      - name: Run Clippy
+        run: cargo clippy --release -- -D warnings
+        working-directory: rust

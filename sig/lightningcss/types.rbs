@@ -1,0 +1,26 @@
+# Note: This file is hand written, `rbs-inline` does not generate this file.
+
+module LightningCSS
+  type browsers = {
+    ?android: Integer,
+    ?chrome: Integer,
+    ?edge: Integer,
+    ?firefox: Integer,
+    ?ie: Integer,
+    ?ios: Integer,
+    ?ios_saf: Integer,
+    ?opera: Integer,
+    ?safari: Integer,
+    ?samsung: Integer
+  }
+
+  type css_modules = bool | {
+    ?pattern: String,
+    ?dashed_idents: bool,
+    ?animation: bool,
+    ?grid: bool,
+    ?container: bool,
+    ?custom_idents: bool,
+    ?pure: bool
+  }
+end
