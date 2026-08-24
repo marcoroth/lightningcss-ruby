@@ -15,6 +15,9 @@ module LightningCSS
       # : () -> String
       def version: () -> String
 
+      # : () -> String
+      def lightningcss_version: () -> String
+
       private
 
       # : (Symbol?) -> bot

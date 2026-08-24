@@ -25,6 +25,7 @@ use crate::options::{TransformOptions, TransformResult};
 use crate::scope::Scoper;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const LIGHTNINGCSS_VERSION: &str = env!("LIGHTNINGCSS_VERSION");
 
 #[repr(C)]
 pub struct LightningCssResult {
@@ -292,6 +293,11 @@ pub unsafe extern "C" fn lightningcss_bundle(path: *const c_char, options_json: 
 #[no_mangle]
 pub unsafe extern "C" fn lightningcss_version() -> *mut c_char {
   into_c_string(VERSION)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn lightningcss_lightningcss_version() -> *mut c_char {
+  into_c_string(LIGHTNINGCSS_VERSION)
 }
 
 #[no_mangle]

@@ -1,4 +1,5 @@
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 
 fn main() {
@@ -12,4 +13,33 @@ fn main() {
 
     bindings.write_to_file(&header_path);
   }
+
+  let lock_path = PathBuf::from(&crate_dir).join("Cargo.lock");
+
+  println!("cargo:rerun-if-changed={}", lock_path.display());
+
+  println!(
+    "cargo:rustc-env=LIGHTNINGCSS_VERSION={}",
+    locked_version(&lock_path, "lightningcss")
+  );
+}
+
+fn locked_version(lock_path: &PathBuf, package: &str) -> String {
+  let Ok(lock) = fs::read_to_string(lock_path) else {
+    return "unknown".to_string();
+  };
+
+  let mut lines = lock.lines();
+
+  while let Some(line) = lines.next() {
+    if line.trim() != format!("name = \"{package}\"") {
+      continue;
+    }
+
+    if let Some(version) = lines.next().and_then(|next| next.trim().strip_prefix("version = ")) {
+      return version.trim_matches('"').to_string();
+    }
+  }
+
+  "unknown".to_string()
 }
