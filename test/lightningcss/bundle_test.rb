@@ -6,6 +6,9 @@ module LightningCSS
   class BundleTest < Minitest::Spec
     ENTRY = File.expand_path("../fixtures/bundle/entry.css", __dir__)
     MISSING = File.expand_path("../fixtures/bundle/missing.css", __dir__)
+    WARNED = File.expand_path("../fixtures/bundle/warned.css", __dir__)
+    IMPORTED = File.expand_path("../fixtures/bundle/nested/warned.css", __dir__)
+    WARNING = "'deep' is not recognized as a valid pseudo-class. Did you mean '::deep' (pseudo-element) or is this a typo? at #{IMPORTED}:0:9".freeze
 
     test "resolves the imports a stylesheet was written with, in the order it imported them" do
       code = LightningCSS.bundle(ENTRY, minify: true).code
@@ -33,6 +36,46 @@ module LightningCSS
       code = Transformer.new(minify: true).bundle(ENTRY).code
 
       assert_equal ":root{--brand:red}.layout{display:grid}.entry{color:var(--brand)}", code
+    end
+
+    test "renames every name it bundled, and reports the ones the entry wrote" do
+      result = LightningCSS.bundle(ENTRY, css_modules: { pattern: "bundled-[local]" }, minify: true)
+
+      assert_equal ":root{--brand:red}.bundled-layout{display:grid}.bundled-entry{color:var(--brand)}", result.code
+      assert_equal({ "entry" => "bundled-entry" }, result.exports)
+    end
+
+    test "hashes every file it bundled on its own, so two of them never collide" do
+      code = LightningCSS.bundle(ENTRY, css_modules: true, minify: true).code
+
+      entry = code[/\.(\w+)_entry\{/, 1]
+      layout = code[/\.(\w+)_layout\{/, 1]
+
+      refute_nil entry
+      refute_nil layout
+      refute_equal entry, layout
+    end
+
+    test "reports no exports when it was not asked to compile a CSS module" do
+      assert_nil LightningCSS.bundle(ENTRY, minify: true).exports
+    end
+
+    test "reports what it kept but did not understand, and which file wrote it" do
+      result = LightningCSS.bundle(WARNED, minify: true)
+
+      assert_equal [WARNING], result.warnings
+      assert_predicate result, :warnings?
+    end
+
+    test "keeps the rule it warned about" do
+      assert_includes LightningCSS.bundle(WARNED, minify: true).code, ".a:deep(.b){color:red}"
+    end
+
+    test "reports none for a bundle it fully understood" do
+      result = LightningCSS.bundle(ENTRY, minify: true)
+
+      assert_empty result.warnings
+      refute_predicate result, :warnings?
     end
   end
 end

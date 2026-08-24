@@ -62,6 +62,18 @@ LightningCSS.transform(".a { color: lab(50% 40 59) }", targets: { chrome: 80 }, 
 LightningCSS.bundle("app/assets/stylesheets/application.css", minify: true).code
 ```
 
+It answers the same result a transform does. Every warning names the file it came from, and compiling as a CSS module renames the names in every file it read while exporting the ones the entry wrote. A file it imported is hashed on its own, so its names never collide with the entry's.
+
+```ruby
+result = LightningCSS.bundle("app/assets/stylesheets/application.css", css_modules: true)
+
+result.exports
+#=> {"application" => "_8Z4fiW_application"}
+
+result.warnings.first
+#=> "'deep' is not recognized as a valid pseudo-class. ... at app/assets/stylesheets/layout.css:0:9"
+```
+
 #### CSS modules
 
 Compiling as a CSS module renames every class, id, `@keyframes`, and custom identifier, and reports what each name became.
