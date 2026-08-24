@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "An extremely fast CSS parser, transformer, bundler, and minifier."
   spec.description = "Ruby bindings for Lightning CSS, an extremely fast CSS parser, transformer, bundler, and minifier."
   spec.homepage = "https://github.com/marcoroth/lightningcss-ruby"
-  spec.license = "MIT"
+  spec.licenses = ["MIT", "MPL-2.0"]
   spec.required_ruby_version = ">= 3.2.0"
   spec.require_paths = ["lib"]
 
