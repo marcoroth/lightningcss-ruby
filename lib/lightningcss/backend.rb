@@ -23,6 +23,11 @@ module LightningCSS
         unavailable(__method__)
       end
 
+      #: () -> String
+      def lightningcss_version
+        unavailable(__method__)
+      end
+
       private
 
       #: (Symbol?) -> bot

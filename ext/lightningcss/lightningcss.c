@@ -85,6 +85,12 @@ static VALUE rb_native_version(VALUE self) {
   return take_utf8_string(lightningcss_version());
 }
 
+static VALUE rb_lightningcss_version(VALUE self) {
+  (void) self;
+
+  return take_utf8_string(lightningcss_lightningcss_version());
+}
+
 void Init_lightningcss(void) {
   rb_mLightningCSS = rb_define_module("LightningCSS");
   rb_mBackend = rb_define_module_under(rb_mLightningCSS, "Backend");
@@ -98,4 +104,5 @@ void Init_lightningcss(void) {
   rb_define_singleton_method(rb_mBackend, "transform_style_attribute", rb_transform_style_attribute, 2);
   rb_define_singleton_method(rb_mBackend, "bundle", rb_bundle, 2);
   rb_define_singleton_method(rb_mBackend, "version", rb_native_version, 0);
+  rb_define_singleton_method(rb_mBackend, "lightningcss_version", rb_lightningcss_version, 0);
 }

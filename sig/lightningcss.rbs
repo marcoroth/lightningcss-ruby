@@ -27,5 +27,5 @@ module LightningCSS
   def self.minify: (String, ?filename: String?, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> String
 
   # : () -> String
-  def self.native_version: () -> String
+  def self.lightningcss_version: () -> String
 end

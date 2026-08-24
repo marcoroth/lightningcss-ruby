@@ -54,7 +54,7 @@ module LightningCSS
   end
 
   #: () -> String
-  def self.native_version
-    Backend.version
+  def self.lightningcss_version
+    Backend.lightningcss_version
   end
 end
