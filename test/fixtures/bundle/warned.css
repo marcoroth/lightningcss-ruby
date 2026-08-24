@@ -1,0 +1,3 @@
+@import "nested/warned.css";
+
+.warned { color: var(--brand); }

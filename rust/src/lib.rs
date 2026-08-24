@@ -151,13 +151,16 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
     None => None,
   };
 
+  let provider = FileProvider::new();
+  let collected = Arc::new(RwLock::new(Vec::new()));
+
   let parser_options = ParserOptions {
     css_modules,
     error_recovery: options.error_recovery,
+    warnings: Some(collected.clone()),
     ..ParserOptions::default()
   };
 
-  let provider = FileProvider::new();
   let mut bundler = Bundler::new(&provider, None, parser_options);
 
   let mut stylesheet = bundler
@@ -191,10 +194,22 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
     })
     .map_err(|error| format!("Failed to print: {error}"))?;
 
+  let exports = printed.exports.map(|exports| {
+    exports
+      .into_iter()
+      .map(|(local, export)| (local, export.name))
+      .collect::<HashMap<String, String>>()
+  });
+
+  let warnings = collected
+    .read()
+    .map(|warnings| warnings.iter().map(|warning| warning.to_string()).collect())
+    .unwrap_or_default();
+
   Ok(TransformResult {
     code: printed.code,
-    exports: None,
-    warnings: Vec::new(),
+    exports,
+    warnings,
   })
 }
 
