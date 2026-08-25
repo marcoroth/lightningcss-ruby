@@ -84,7 +84,18 @@ end
 
 static_lib = File.join(lib_dir, "liblightningcss_ffi.a")
 
-if File.exist?(static_lib)
+developing = File.exist?(File.join(root_dir, ".git"))
+
+if File.exist?(static_lib) && !developing
+  vendored = File.join(ext_dir, "liblightningcss_ffi.a")
+
+  FileUtils.cp(static_lib, vendored)
+  FileUtils.rm_rf(target_dir)
+
+  puts "lightningcss: Static library vendored at #{vendored}, Rust build directory removed"
+
+  $LDFLAGS << " #{vendored}"
+elsif File.exist?(static_lib)
   puts "lightningcss: Static library found at #{static_lib}"
 
   $LDFLAGS << " #{static_lib}"
