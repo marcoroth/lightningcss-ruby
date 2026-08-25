@@ -17,8 +17,8 @@ module LightningCSS
   # : (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
   def self.transform: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
 
-  # : (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
-  def self.bundle: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+  # : (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+  def self.bundle: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
 
   # : (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?) -> LightningCSS::Result
   def self.transform_style_attribute: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?) -> LightningCSS::Result

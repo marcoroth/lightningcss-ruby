@@ -13,6 +13,8 @@ module LightningCSS
 
     STYLE_ATTRIBUTE: Array[Symbol]
 
+    BUNDLE: Array[Symbol]
+
     attr_reader to_h: Hash[Symbol, untyped]
 
     # : (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> String

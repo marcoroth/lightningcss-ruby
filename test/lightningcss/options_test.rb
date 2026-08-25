@@ -73,6 +73,10 @@ module LightningCSS
       assert_equal [:filename, :minify, :error_recovery, :targets], Options::STYLE_ATTRIBUTE
     end
 
+    test "knows what a bundle reads" do
+      assert_equal [:minify, :error_recovery, :targets, :css_modules, :scope], Options::BUNDLE
+    end
+
     test "refuses an option that has nothing to act on" do
       error = assert_raises(OptionError) do
         Options.serialize({ scope: "[s]" }, Options::STYLE_ATTRIBUTE, "a style attribute")

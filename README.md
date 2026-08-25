@@ -62,6 +62,8 @@ LightningCSS.transform(".a { color: lab(50% 40 59) }", targets: { chrome: 80 }, 
 LightningCSS.bundle("app/assets/stylesheets/application.css", minify: true).code
 ```
 
+A bundle names every file it reads by the path it read it from, so it takes no `filename` and says so when given one.
+
 It answers the same result a transform does. Every warning names the file it came from, and compiling as a CSS module renames the names in every file it read while exporting the ones the entry wrote. A file it imported is hashed on its own, so its names never collide with the entry's.
 
 ```ruby

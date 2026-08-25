@@ -1,9 +1,10 @@
-use lightningcss_ffi::{lightningcss_bundle, lightningcss_result_free};
+use lightningcss_ffi::{lightningcss_bundle, lightningcss_result_free, LightningCssErrorCode};
 
 use std::ffi::{CStr, CString};
 
 const ENTRY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/fixtures/bundle/entry.css");
 const MISSING: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/fixtures/bundle/missing.css");
+const BROKEN: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/fixtures/bundle/broken.css");
 
 fn bundle(path: &str, options: &str) -> Result<String, String> {
   let path = CString::new(path).unwrap();
@@ -51,4 +52,26 @@ fn bundle_answers_an_error_for_a_file_that_is_not_there() {
     bundle(MISSING, "{}"),
     Err("No such file or directory (os error 2)".to_string())
   );
+}
+
+fn bundle_code(path: &str, options: &str) -> LightningCssErrorCode {
+  let path = CString::new(path).unwrap();
+  let options = CString::new(options).unwrap();
+
+  let result = unsafe { lightningcss_bundle(path.as_ptr(), options.as_ptr()) };
+  let answer = result.code;
+
+  unsafe { lightningcss_result_free(result) };
+
+  answer
+}
+
+#[test]
+fn a_file_it_cannot_read_carries_the_bundle_code() {
+  assert_eq!(bundle_code(MISSING, "{}"), LightningCssErrorCode::Bundle);
+}
+
+#[test]
+fn css_it_cannot_parse_carries_the_parse_code_wherever_it_was_imported_from() {
+  assert_eq!(bundle_code(BROKEN, "{}"), LightningCssErrorCode::Parse);
 }

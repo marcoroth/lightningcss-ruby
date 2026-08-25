@@ -17,7 +17,7 @@ use std::os::raw::c_char;
 use std::ptr;
 use std::sync::{Arc, RwLock};
 
-use lightningcss::bundler::{Bundler, FileProvider};
+use lightningcss::bundler::{BundleErrorKind, Bundler, FileProvider};
 use lightningcss::stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleAttribute, StyleSheet};
 use lightningcss::visitor::Visit;
 
@@ -28,9 +28,20 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const LIGHTNINGCSS_VERSION: &str = env!("LIGHTNINGCSS_VERSION");
 
 #[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LightningCssErrorCode {
+  None = 0,
+  Parse,
+  Option,
+  Bundle,
+  Internal,
+}
+
+#[repr(C)]
 pub struct LightningCssResult {
   pub value: *mut c_char,
   pub error: *mut c_char,
+  pub code: LightningCssErrorCode,
 }
 
 impl LightningCssResult {
@@ -38,13 +49,50 @@ impl LightningCssResult {
     Self {
       value: into_c_string(value),
       error: ptr::null_mut(),
+      code: LightningCssErrorCode::None,
     }
   }
 
-  fn err(message: impl AsRef<str>) -> Self {
+  fn err(failure: Failure) -> Self {
     Self {
       value: ptr::null_mut(),
-      error: into_c_string(message.as_ref()),
+      error: into_c_string(failure.message),
+      code: failure.code,
+    }
+  }
+}
+
+pub struct Failure {
+  code: LightningCssErrorCode,
+  message: String,
+}
+
+impl Failure {
+  fn parse(message: impl Into<String>) -> Self {
+    Self {
+      code: LightningCssErrorCode::Parse,
+      message: message.into(),
+    }
+  }
+
+  fn option(message: impl Into<String>) -> Self {
+    Self {
+      code: LightningCssErrorCode::Option,
+      message: message.into(),
+    }
+  }
+
+  fn bundle(message: impl Into<String>) -> Self {
+    Self {
+      code: LightningCssErrorCode::Bundle,
+      message: message.into(),
+    }
+  }
+
+  fn internal(message: impl Into<String>) -> Self {
+    Self {
+      code: LightningCssErrorCode::Internal,
+      message: message.into(),
     }
   }
 }
@@ -53,17 +101,17 @@ fn into_c_string(value: impl Into<Vec<u8>>) -> *mut c_char {
   CString::new(value).unwrap_or_default().into_raw()
 }
 
-unsafe fn borrow_str<'a>(pointer: *const c_char, label: &str) -> Result<&'a str, String> {
+unsafe fn borrow_str<'a>(pointer: *const c_char, label: &str) -> Result<&'a str, Failure> {
   if pointer.is_null() {
-    return Err(format!("{label} is null"));
+    return Err(Failure::internal(format!("{label} is null")));
   }
 
   CStr::from_ptr(pointer)
     .to_str()
-    .map_err(|error| format!("Invalid UTF-8 in {label}: {error}"))
+    .map_err(|error| Failure::internal(format!("Invalid UTF-8 in {label}: {error}")))
 }
 
-unsafe fn borrow_options(pointer: *const c_char) -> Result<TransformOptions, String> {
+unsafe fn borrow_options(pointer: *const c_char) -> Result<TransformOptions, Failure> {
   if pointer.is_null() {
     return Ok(TransformOptions::default());
   }
@@ -74,13 +122,13 @@ unsafe fn borrow_options(pointer: *const c_char) -> Result<TransformOptions, Str
     return Ok(TransformOptions::default());
   }
 
-  serde_json::from_str(json).map_err(|error| format!("Invalid options: {error}"))
+  serde_json::from_str(json).map_err(|error| Failure::option(format!("Invalid options: {error}")))
 }
 
-fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformResult, String> {
+fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformResult, Failure> {
   let filename = options.filename.clone().unwrap_or_default();
   let css_modules = match &options.css_modules {
-    Some(modules) => Some(modules.to_config()?),
+    Some(modules) => Some(modules.to_config().map_err(Failure::option)?),
     None => None,
   };
 
@@ -94,14 +142,14 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
     ..ParserOptions::default()
   };
 
-  let mut stylesheet = StyleSheet::parse(code, parser_options).map_err(|error| error.to_string())?;
+  let mut stylesheet = StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(error.to_string()))?;
 
   if let Some(fragment) = &options.scope {
-    let mut scoper = Scoper::parse(fragment)?;
+    let mut scoper = Scoper::parse(fragment).map_err(Failure::option)?;
 
     stylesheet
       .visit(&mut scoper)
-      .map_err(|error| format!("Failed to scope stylesheet: {error:?}"))?;
+      .map_err(|error| Failure::internal(format!("Failed to scope stylesheet: {error:?}")))?;
   }
 
   let targets = options.to_targets();
@@ -112,7 +160,7 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
         targets,
         ..MinifyOptions::default()
       })
-      .map_err(|error| format!("Failed to minify: {error}"))?;
+      .map_err(|error| Failure::internal(format!("Failed to minify: {error}")))?;
   }
 
   let printed = stylesheet
@@ -124,7 +172,7 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
       analyze_dependencies: None,
       pseudo_classes: None,
     })
-    .map_err(|error| format!("Failed to print: {error}"))?;
+    .map_err(|error| Failure::internal(format!("Failed to print: {error}")))?;
 
   let exports = printed.exports.map(|exports| {
     exports
@@ -145,9 +193,9 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
   })
 }
 
-fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResult, String> {
+fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResult, Failure> {
   let css_modules = match &options.css_modules {
-    Some(modules) => Some(modules.to_config()?),
+    Some(modules) => Some(modules.to_config().map_err(Failure::option)?),
     None => None,
   };
 
@@ -165,14 +213,17 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
 
   let mut stylesheet = bundler
     .bundle(std::path::Path::new(path))
-    .map_err(|error| error.to_string())?;
+    .map_err(|error| match &error.kind {
+      BundleErrorKind::ParserError(_) => Failure::parse(error.to_string()),
+      _ => Failure::bundle(error.to_string()),
+    })?;
 
   if let Some(fragment) = &options.scope {
-    let mut scoper = Scoper::parse(fragment)?;
+    let mut scoper = Scoper::parse(fragment).map_err(Failure::option)?;
 
     stylesheet
       .visit(&mut scoper)
-      .map_err(|error| format!("Failed to scope stylesheet: {error:?}"))?;
+      .map_err(|error| Failure::internal(format!("Failed to scope stylesheet: {error:?}")))?;
   }
 
   let targets = options.to_targets();
@@ -183,7 +234,7 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
         targets,
         ..MinifyOptions::default()
       })
-      .map_err(|error| format!("Failed to minify: {error}"))?;
+      .map_err(|error| Failure::internal(format!("Failed to minify: {error}")))?;
   }
 
   let printed = stylesheet
@@ -192,7 +243,7 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
       targets,
       ..PrinterOptions::default()
     })
-    .map_err(|error| format!("Failed to print: {error}"))?;
+    .map_err(|error| Failure::internal(format!("Failed to print: {error}")))?;
 
   let exports = printed.exports.map(|exports| {
     exports
@@ -213,14 +264,14 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
   })
 }
 
-fn transform_attribute(code: &str, options: &TransformOptions) -> Result<TransformResult, String> {
+fn transform_attribute(code: &str, options: &TransformOptions) -> Result<TransformResult, Failure> {
   let parser_options = ParserOptions {
     filename: options.filename.clone().unwrap_or_default(),
     error_recovery: options.error_recovery,
     ..ParserOptions::default()
   };
 
-  let mut attribute = StyleAttribute::parse(code, parser_options).map_err(|error| error.to_string())?;
+  let mut attribute = StyleAttribute::parse(code, parser_options).map_err(|error| Failure::parse(error.to_string()))?;
 
   let targets = options.to_targets();
 
@@ -235,7 +286,7 @@ fn transform_attribute(code: &str, options: &TransformOptions) -> Result<Transfo
       targets,
       ..PrinterOptions::default()
     })
-    .map_err(|error| format!("Failed to print: {error}"))?;
+    .map_err(|error| Failure::internal(format!("Failed to print: {error}")))?;
 
   Ok(TransformResult {
     code: printed.code,
@@ -244,13 +295,13 @@ fn transform_attribute(code: &str, options: &TransformOptions) -> Result<Transfo
   })
 }
 
-fn to_result(outcome: Result<TransformResult, String>) -> LightningCssResult {
+fn to_result(outcome: Result<TransformResult, Failure>) -> LightningCssResult {
   match outcome {
     Ok(result) => match serde_json::to_string(&result) {
       Ok(json) => LightningCssResult::ok(json),
-      Err(error) => LightningCssResult::err(format!("Failed to serialize result: {error}")),
+      Err(error) => LightningCssResult::err(Failure::internal(format!("Failed to serialize result: {error}"))),
     },
-    Err(message) => LightningCssResult::err(message),
+    Err(failure) => LightningCssResult::err(failure),
   }
 }
 
@@ -261,12 +312,12 @@ pub unsafe extern "C" fn lightningcss_transform(
 ) -> LightningCssResult {
   let code = match borrow_str(code, "code") {
     Ok(code) => code,
-    Err(message) => return LightningCssResult::err(message),
+    Err(failure) => return LightningCssResult::err(failure),
   };
 
   let options = match borrow_options(options_json) {
     Ok(options) => options,
-    Err(message) => return LightningCssResult::err(message),
+    Err(failure) => return LightningCssResult::err(failure),
   };
 
   to_result(transform_source(code, &options))
@@ -279,12 +330,12 @@ pub unsafe extern "C" fn lightningcss_transform_style_attribute(
 ) -> LightningCssResult {
   let code = match borrow_str(code, "code") {
     Ok(code) => code,
-    Err(message) => return LightningCssResult::err(message),
+    Err(failure) => return LightningCssResult::err(failure),
   };
 
   let options = match borrow_options(options_json) {
     Ok(options) => options,
-    Err(message) => return LightningCssResult::err(message),
+    Err(failure) => return LightningCssResult::err(failure),
   };
 
   to_result(transform_attribute(code, &options))
@@ -294,12 +345,12 @@ pub unsafe extern "C" fn lightningcss_transform_style_attribute(
 pub unsafe extern "C" fn lightningcss_bundle(path: *const c_char, options_json: *const c_char) -> LightningCssResult {
   let path = match borrow_str(path, "path") {
     Ok(path) => path,
-    Err(message) => return LightningCssResult::err(message),
+    Err(failure) => return LightningCssResult::err(failure),
   };
 
   let options = match borrow_options(options_json) {
     Ok(options) => options,
-    Err(message) => return LightningCssResult::err(message),
+    Err(failure) => return LightningCssResult::err(failure),
   };
 
   to_result(bundle_source(path, &options))

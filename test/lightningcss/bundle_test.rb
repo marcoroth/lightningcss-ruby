@@ -7,6 +7,8 @@ module LightningCSS
     ENTRY = File.expand_path("../fixtures/bundle/entry.css", __dir__)
     MISSING = File.expand_path("../fixtures/bundle/missing.css", __dir__)
     WARNED = File.expand_path("../fixtures/bundle/warned.css", __dir__)
+    BROKEN = File.expand_path("../fixtures/bundle/broken.css", __dir__)
+    UNREADABLE = File.expand_path("../fixtures/bundle/nested/broken.css", __dir__)
     IMPORTED = File.expand_path("../fixtures/bundle/nested/warned.css", __dir__)
     WARNING = "'deep' is not recognized as a valid pseudo-class. Did you mean '::deep' (pseudo-element) or is this a typo? at #{IMPORTED}:0:9".freeze
 
@@ -76,6 +78,24 @@ module LightningCSS
 
       assert_empty result.warnings
       refute_predicate result, :warnings?
+    end
+
+    test "raises a parse error for CSS it could not read, wherever it imported it from" do
+      error = assert_raises(LightningCSS::ParseError) { LightningCSS.bundle(BROKEN) }
+
+      assert_equal "Invalid empty selector at #{UNREADABLE}:0:1", error.message
+    end
+
+    test "refuses a filename, naming every file it reads by the path it read it from" do
+      error = assert_raises(LightningCSS::OptionError) { LightningCSS.bundle(ENTRY, filename: "x.css") }
+
+      assert_equal "filename is not an option for a bundle", error.message
+    end
+
+    test "refuses a filename a transformer was built with, the same way" do
+      error = assert_raises(LightningCSS::OptionError) { Transformer.new(filename: "x.css").bundle(ENTRY) }
+
+      assert_equal "filename is not an option for a bundle", error.message
     end
   end
 end

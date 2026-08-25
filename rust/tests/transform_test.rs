@@ -1,5 +1,6 @@
 use lightningcss_ffi::{
-  lightningcss_result_free, lightningcss_transform, lightningcss_transform_style_attribute, LightningCssResult,
+  lightningcss_result_free, lightningcss_transform, lightningcss_transform_style_attribute, LightningCssErrorCode,
+  LightningCssResult,
 };
 
 use std::ffi::{CStr, CString};
@@ -25,6 +26,63 @@ fn call(function: Call, code: &str, options: &str) -> Result<String, String> {
   let options = CString::new(options).unwrap();
 
   answer(unsafe { function(code.as_ptr(), options.as_ptr()) })
+}
+
+fn code_of(function: Call, code: &str, options: &str) -> LightningCssErrorCode {
+  let code = CString::new(code).unwrap();
+  let options = CString::new(options).unwrap();
+
+  let result = unsafe { function(code.as_ptr(), options.as_ptr()) };
+  let answer = result.code;
+
+  unsafe { lightningcss_result_free(result) };
+
+  answer
+}
+
+#[test]
+fn a_stylesheet_it_cannot_read_carries_the_parse_code() {
+  assert_eq!(
+    code_of(lightningcss_transform, ". { color: red }", "{}"),
+    LightningCssErrorCode::Parse
+  );
+}
+
+#[test]
+fn an_option_it_does_not_read_carries_the_option_code() {
+  assert_eq!(
+    code_of(lightningcss_transform, ".a {}", r#"{"nonsense":true}"#),
+    LightningCssErrorCode::Option
+  );
+}
+
+#[test]
+fn a_scope_that_is_not_a_selector_carries_the_option_code() {
+  assert_eq!(
+    code_of(lightningcss_transform, ".a {}", r#"{"scope":"(("}"#),
+    LightningCssErrorCode::Option
+  );
+}
+
+#[test]
+fn a_stylesheet_that_is_not_utf8_carries_the_internal_code() {
+  let options = CString::new("{}").unwrap();
+  let code = [0xffu8, 0x00];
+
+  let result = unsafe { lightningcss_transform(code.as_ptr() as *const c_char, options.as_ptr()) };
+  let answer = result.code;
+
+  unsafe { lightningcss_result_free(result) };
+
+  assert_eq!(answer, LightningCssErrorCode::Internal);
+}
+
+#[test]
+fn a_stylesheet_it_could_read_carries_no_code() {
+  assert_eq!(
+    code_of(lightningcss_transform, ".a { color: red }", "{}"),
+    LightningCssErrorCode::None
+  );
 }
 
 #[test]

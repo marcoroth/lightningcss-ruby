@@ -22,26 +22,19 @@ static VALUE take_utf8_string(char *cstring) {
   return string;
 }
 
-static VALUE error_class_for(const char *message) {
-  if (strstr(message, "Invalid options") || strstr(message, "Invalid CSS modules pattern")) {
-    return rb_eOptionError;
+static VALUE error_class_for(enum LightningCssErrorCode code) {
+  switch (code) {
+    case LIGHTNING_CSS_ERROR_CODE_PARSE: return rb_eParseError;
+    case LIGHTNING_CSS_ERROR_CODE_OPTION: return rb_eOptionError;
+    case LIGHTNING_CSS_ERROR_CODE_BUNDLE: return rb_eBundleError;
+    default: return rb_eError;
   }
-
-  if (strstr(message, "os error") || strstr(message, "No such file")) {
-    return rb_eBundleError;
-  }
-
-  if (strstr(message, "Invalid scope selector") || strstr(message, "Scope selector")) {
-    return rb_eOptionError;
-  }
-
-  return rb_eParseError;
 }
 
 static VALUE unwrap(struct LightningCssResult result) {
   if (result.error) {
     VALUE message = make_utf8_string(result.error);
-    VALUE error_class = error_class_for(result.error);
+    VALUE error_class = error_class_for(result.code);
 
     lightningcss_result_free(result);
 

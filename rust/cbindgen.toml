@@ -10,6 +10,7 @@ no_includes = true
 [export]
 include = [
   "LightningCssResult",
+  "LightningCssErrorCode",
 ]
 
 [enum]

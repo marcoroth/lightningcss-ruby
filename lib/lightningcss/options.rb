@@ -26,6 +26,14 @@ module LightningCSS
       :targets
     ].freeze #: Array[Symbol]
 
+    BUNDLE = [
+      :minify,
+      :error_recovery,
+      :targets,
+      :css_modules,
+      :scope
+    ].freeze #: Array[Symbol]
+
     attr_reader :to_h #: Hash[Symbol, untyped]
 
     #: (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> String

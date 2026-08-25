@@ -36,9 +36,11 @@ module LightningCSS
     Result.from_json(Backend.transform(code.to_s, Options.serialize(options)))
   end
 
-  #: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+  #: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
   def self.bundle(path, **options)
-    Result.from_json(Backend.bundle(path.to_s, Options.serialize(options)))
+    serialized = Options.serialize(options, Options::BUNDLE, "a bundle")
+
+    Result.from_json(Backend.bundle(path.to_s, serialized))
   end
 
   #: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?) -> LightningCSS::Result
