@@ -43,7 +43,7 @@ module LightningCSS
 
   #: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?) -> LightningCSS::Result
   def self.transform_style_attribute(code, **options)
-    serialized = Options.serialize(options, allowed: Options::STYLE_ATTRIBUTE, subject: "a style attribute")
+    serialized = Options.serialize(options, Options::STYLE_ATTRIBUTE, "a style attribute")
 
     Result.from_json(Backend.transform_style_attribute(code.to_s, serialized))
   end

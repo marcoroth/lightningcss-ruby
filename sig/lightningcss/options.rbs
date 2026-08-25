@@ -15,11 +15,11 @@ module LightningCSS
 
     attr_reader to_h: Hash[Symbol, untyped]
 
-    # : (Hash[Symbol, untyped], ?allowed: Array[Symbol], ?subject: String) -> String
-    def self.serialize: (Hash[Symbol, untyped], ?allowed: Array[Symbol], ?subject: String) -> String
+    # : (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> String
+    def self.serialize: (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> String
 
-    # : (?allowed: Array[Symbol], ?subject: String, **untyped) -> void
-    def initialize: (?allowed: Array[Symbol], ?subject: String, **untyped) -> void
+    # : (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> void
+    def initialize: (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> void
 
     # : (?untyped) -> String
     def to_json: (?untyped) -> String
