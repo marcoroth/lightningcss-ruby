@@ -28,13 +28,13 @@ module LightningCSS
 
     attr_reader :to_h #: Hash[Symbol, untyped]
 
-    #: (Hash[Symbol, untyped], ?allowed: Array[Symbol], ?subject: String) -> String
-    def self.serialize(options, allowed: KNOWN, subject: "a transform")
-      new(allowed: allowed, subject: subject, **options).to_json
+    #: (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> String
+    def self.serialize(options, allowed = KNOWN, subject = "a transform")
+      new(options, allowed, subject).to_json
     end
 
-    #: (?allowed: Array[Symbol], ?subject: String, **untyped) -> void
-    def initialize(allowed: KNOWN, subject: "a transform", **options)
+    #: (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> void
+    def initialize(options, allowed = KNOWN, subject = "a transform")
       given = options.transform_keys(&:to_sym)
 
       validate!(given.keys, allowed, subject)
