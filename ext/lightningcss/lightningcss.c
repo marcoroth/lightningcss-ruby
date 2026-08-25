@@ -1,5 +1,6 @@
 #include <ruby.h>
 #include <ruby/encoding.h>
+#include <ruby/thread.h>
 #include "include/lightningcss.h"
 
 static VALUE rb_mLightningCSS;
@@ -8,6 +9,15 @@ static VALUE rb_eError;
 static VALUE rb_eParseError;
 static VALUE rb_eOptionError;
 static VALUE rb_eBundleError;
+
+typedef struct LightningCssResult (*lightningcss_function)(const char *, const char *);
+
+struct call_arguments {
+  lightningcss_function function;
+  const char *input;
+  const char *options;
+  struct LightningCssResult result;
+};
 
 static VALUE make_utf8_string(const char *cstring) {
   return rb_enc_str_new_cstr(cstring, rb_utf8_encoding());
@@ -54,22 +64,42 @@ static VALUE unwrap(struct LightningCssResult result) {
   return value;
 }
 
+static void *without_gvl(void *data) {
+  struct call_arguments *arguments = (struct call_arguments *) data;
+
+  arguments->result = arguments->function(arguments->input, arguments->options);
+
+  return NULL;
+}
+
+static VALUE call(lightningcss_function function, VALUE input, VALUE options) {
+  struct call_arguments arguments;
+
+  arguments.function = function;
+  arguments.input = StringValueCStr(input);
+  arguments.options = StringValueCStr(options);
+
+  rb_thread_call_without_gvl(without_gvl, &arguments, NULL, NULL);
+
+  return unwrap(arguments.result);
+}
+
 static VALUE rb_transform(VALUE self, VALUE code, VALUE options) {
   (void) self;
 
-  return unwrap(lightningcss_transform(StringValueCStr(code), StringValueCStr(options)));
+  return call(lightningcss_transform, code, options);
 }
 
 static VALUE rb_transform_style_attribute(VALUE self, VALUE code, VALUE options) {
   (void) self;
 
-  return unwrap(lightningcss_transform_style_attribute(StringValueCStr(code), StringValueCStr(options)));
+  return call(lightningcss_transform_style_attribute, code, options);
 }
 
 static VALUE rb_bundle(VALUE self, VALUE path, VALUE options) {
   (void) self;
 
-  return unwrap(lightningcss_bundle(StringValueCStr(path), StringValueCStr(options)));
+  return call(lightningcss_bundle, path, options);
 }
 
 static VALUE rb_native_version(VALUE self) {
