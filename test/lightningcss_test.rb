@@ -4,7 +4,7 @@ require "test_helper"
 
 class LightningCSSTest < Minitest::Spec
   test "has a version number" do
-    assert_equal "0.2.0", LightningCSS::VERSION
+    assert_equal "1.33.0", LightningCSS::VERSION
   end
 
   test "the native library was built from the version the gem was" do
