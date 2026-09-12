@@ -27,6 +27,16 @@ bundle add lightningcss
 
 Precompiled gems are published for Linux (gnu and musl) and macOS, on x86_64, aarch64, and arm. On those platforms nothing is compiled at install time. Anywhere else the gem builds from source and needs the [Rust toolchain](https://rustup.rs).
 
+### Versioning
+
+The gem carries the version of the Lightning CSS release it packages. Gem v1.33.0 bundles [Lightning CSS v1.33.0](https://github.com/parcel-bundler/lightningcss/releases/tag/v1.33.0).
+
+Lightning CSS publishes its Rust crate under a different number than it releases under: v1.33.0 ships the crate as `1.0.0-alpha.72`. The gem follows the release, since that is the version everything else calls it. `LightningCSS.lightningcss_version` reports the crate version a given build was compiled against.
+
+So the version tracks Lightning CSS, not the Ruby API here. A minor bump is a minor Lightning CSS release, and says nothing about whether this gem's own API moved. Pin on the Lightning CSS version you want.
+
+If the gem needs releasing again for the same Lightning CSS version, that release adds a fourth digit, as in v1.33.0.1.
+
 ### Usage
 
 #### Transforming

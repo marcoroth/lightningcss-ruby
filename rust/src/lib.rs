@@ -24,7 +24,7 @@ use lightningcss::visitor::Visit;
 use crate::options::{TransformOptions, TransformResult};
 use crate::scope::Scoper;
 
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const VERSION: &str = env!("GEM_VERSION");
 pub const LIGHTNINGCSS_VERSION: &str = env!("LIGHTNINGCSS_VERSION");
 
 #[repr(C)]

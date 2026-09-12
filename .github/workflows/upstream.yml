@@ -1,0 +1,240 @@
+name: Upstream
+
+concurrency:
+  group: upstream
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      lightningcss_version:
+        description: "Lightning CSS release to bump to (e.g. 1.33.0). Leave blank to auto-detect the latest release on GitHub."
+        required: false
+        type: string
+      gem_version:
+        description: "Gem version to release. Leave blank to match the Lightning CSS release. Use a fourth digit (e.g. 1.33.0.1) to re-release the same version."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  UPSTREAM_REPOSITORY: parcel-bundler/lightningcss
+
+jobs:
+  bump:
+    name: Detect and PR a new Lightning CSS release
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Determine Lightning CSS version
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.lightningcss_version }}
+          INPUT_GEM_VERSION: ${{ inputs.gem_version }}
+        run: |
+          set -euo pipefail
+
+          if [[ -n "${INPUT_VERSION}" ]]; then
+            upstream_version="${INPUT_VERSION#v}"
+          else
+            upstream_version=$(gh api "repos/${UPSTREAM_REPOSITORY}/releases/latest" --jq '.tag_name')
+            upstream_version="${upstream_version#v}"
+          fi
+
+          if [[ ! "${upstream_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::${upstream_version} is not a Lightning CSS release of the form X.Y.Z"
+            exit 1
+          fi
+
+          crate_version=$(gh api "repos/${UPSTREAM_REPOSITORY}/contents/Cargo.toml?ref=v${upstream_version}" \
+            --jq '.content' | base64 -d | awk '/^\[package\]/{p=1} p && /^version = /{gsub(/version = |"/, ""); print; exit}')
+
+          if [[ -z "${crate_version}" ]]; then
+            echo "::error::could not read the crate version from Cargo.toml at v${upstream_version}"
+            exit 1
+          fi
+
+          if ! curl -sSf "https://crates.io/api/v1/crates/lightningcss/${crate_version}" \
+            -H "User-Agent: lightningcss-ruby upstream workflow" > /dev/null; then
+            echo "::error::lightningcss ${crate_version} is not published on crates.io"
+            exit 1
+          fi
+
+          gem_version="${INPUT_GEM_VERSION:-${upstream_version}}"
+
+          if [[ ! "${gem_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "::error::gem version ${gem_version} is not of the form X.Y.Z or X.Y.Z.N"
+            exit 1
+          fi
+
+          current_crate_version=$(grep -E '^lightningcss = \{ version = "=' rust/Cargo.toml | sed -E 's/.*version = "=([^"]+)".*/\1/')
+          current_gem_version=$(sed -n -E 's/^  VERSION = "(.*)"$/\1/p' lib/lightningcss/version.rb)
+
+          echo "upstream_version=${upstream_version}" >> "$GITHUB_OUTPUT"
+          echo "crate_version=${crate_version}" >> "$GITHUB_OUTPUT"
+          echo "current_crate_version=${current_crate_version}" >> "$GITHUB_OUTPUT"
+          echo "gem_version=${gem_version}" >> "$GITHUB_OUTPUT"
+          echo "current_gem_version=${current_gem_version}" >> "$GITHUB_OUTPUT"
+
+          if [[ "${crate_version}" == "${current_crate_version}" && "${gem_version}" == "${current_gem_version}" ]]; then
+            echo "Already up to date (Lightning CSS ${upstream_version}, crate ${current_crate_version}, gem ${current_gem_version})"
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New release: Lightning CSS v${upstream_version} carries crate ${crate_version}"
+            echo "crate ${current_crate_version} -> ${crate_version}, gem ${current_gem_version} -> ${gem_version}"
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for an existing PR
+        if: steps.upstream.outputs.needed == 'true'
+        id: existing_pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GEM_VERSION: ${{ steps.upstream.outputs.gem_version }}
+        run: |
+          set -euo pipefail
+
+          pr=$(gh pr list --head "bot-dep-lightningcss-${GEM_VERSION}" --json number --jq '.[0].number // empty')
+
+          if [[ -n "${pr}" ]]; then
+            echo "PR #${pr} already exists for ${GEM_VERSION}"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Rust
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          cache-workspaces: rust
+
+      - name: Set up Ruby
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Bump Lightning CSS and the gem version
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        env:
+          CRATE_VERSION: ${{ steps.upstream.outputs.crate_version }}
+          GEM_VERSION: ${{ steps.upstream.outputs.gem_version }}
+        run: |
+          set -euo pipefail
+
+          sed -E -i "s|^(lightningcss = \{ version = \"=)[^\"]*(\")|\1${CRATE_VERSION}\2|" rust/Cargo.toml
+          sed -E -i "s|^  VERSION = \".*\"|  VERSION = \"${GEM_VERSION}\"|" lib/lightningcss/version.rb
+
+          sed -E -i "s|assert_equal \".*\", LightningCSS::VERSION|assert_equal \"${GEM_VERSION}\", LightningCSS::VERSION|" test/lightningcss_test.rb
+          sed -E -i "s|assert_equal \".*\", LightningCSS\.lightningcss_version|assert_equal \"${CRATE_VERSION}\", LightningCSS.lightningcss_version|" test/lightningcss_test.rb
+
+          git diff --stat
+
+      - name: Update the lockfiles
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        env:
+          CRATE_VERSION: ${{ steps.upstream.outputs.crate_version }}
+        run: |
+          set -euo pipefail
+
+          cargo fetch --manifest-path rust/Cargo.toml
+
+          bundle config set --local deployment false
+          bundle config set --local frozen false
+          bundle install
+
+          locked=$(sed -n -E '/^name = "lightningcss"$/{n;s/^version = "(.*)"$/\1/p;}' rust/Cargo.lock)
+
+          if [[ "${locked}" != "${CRATE_VERSION}" ]]; then
+            echo "::error::rust/Cargo.lock pins lightningcss ${locked}, expected ${CRATE_VERSION}"
+            exit 1
+          fi
+
+      - name: Build and test against the new version
+        id: verify
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+
+          bundle exec rake test 2>&1 | tee "${RUNNER_TEMP}/verify.log"
+
+      - name: Create pull request
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.LIGHTNINGCSS_RUBY_PR_TOKEN || github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          UPSTREAM_VERSION: ${{ steps.upstream.outputs.upstream_version }}
+          CRATE_VERSION: ${{ steps.upstream.outputs.crate_version }}
+          CURRENT_CRATE_VERSION: ${{ steps.upstream.outputs.current_crate_version }}
+          CURRENT_GEM_VERSION: ${{ steps.upstream.outputs.current_gem_version }}
+          GEM_VERSION: ${{ steps.upstream.outputs.gem_version }}
+          VERIFIED: ${{ steps.verify.outcome }}
+        run: |
+          set -euo pipefail
+
+          branch="bot-dep-lightningcss-${GEM_VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          git switch -c "${branch}"
+          git add rust/Cargo.toml rust/Cargo.lock lib/lightningcss/version.rb test/lightningcss_test.rb Gemfile.lock
+          git commit -m "$(printf "Bump Lightning CSS to %s\n\nUpdate the embedded Lightning CSS dependency from %s to %s and release it\nas gem v%s.\n\nhttps://github.com/%s/releases/tag/v%s" \
+            "${UPSTREAM_VERSION}" "${CURRENT_CRATE_VERSION}" "${CRATE_VERSION}" "${GEM_VERSION}" "${UPSTREAM_REPOSITORY}" "${UPSTREAM_VERSION}")"
+
+          git push --force -u origin "${branch}"
+
+          body="${RUNNER_TEMP}/pr-body.md"
+
+          {
+            printf 'Update the embedded Lightning CSS dependency to [v%s](https://github.com/%s/releases/tag/v%s), which carries crate `%s` (was `%s`).\n\n' \
+              "${UPSTREAM_VERSION}" "${UPSTREAM_REPOSITORY}" "${UPSTREAM_VERSION}" "${CRATE_VERSION}" "${CURRENT_CRATE_VERSION}"
+            printf 'The gem version tracks the Lightning CSS release it packages, so this also bumps the gem from %s to **%s**.\n\n' \
+              "${CURRENT_GEM_VERSION}" "${GEM_VERSION}"
+          } > "${body}"
+
+          if [[ "${VERIFIED}" == "success" ]]; then
+            printf 'The gem was built and tested against the new version before this PR was opened. Merging this does not publish anything, cut a `v%s` release to push the gems.\n' \
+              "${GEM_VERSION}" >> "${body}"
+          else
+            {
+              printf '> [!WARNING]\n'
+              printf '> The gem did not build or test cleanly against this version, so this PR is a draft.\n'
+              printf '> Something upstream changed in a way this gem has to be adapted to.\n\n'
+              printf '<details><summary>Verification output</summary>\n\n```\n'
+              sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g' "${RUNNER_TEMP}/verify.log" | tail -c 8000
+              printf '\n```\n\n</details>\n'
+            } >> "${body}"
+          fi
+
+          printf '\nThis PR was created automatically by the upstream workflow.\n' >> "${body}"
+
+          if [[ "${VERIFIED}" == "success" ]]; then
+            gh pr create --title "Bump Lightning CSS to ${UPSTREAM_VERSION}" --body-file "${body}"
+          else
+            gh pr create --draft --title "Bump Lightning CSS to ${UPSTREAM_VERSION}" --body-file "${body}"
+          fi
+
+      - name: Report the verification result
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false' && steps.verify.outcome == 'failure'
+        run: |
+          echo "::error::The gem did not build or test cleanly against the new version. A draft PR was opened to fix it in."
+          exit 1
