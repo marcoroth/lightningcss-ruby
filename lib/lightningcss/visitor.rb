@@ -20,9 +20,9 @@ module LightningCSS
     def visit(node)
       node = node.root if node.is_a?(ParseResult)
 
-      answer = "visit_#{node.underscored_type}" if node.underscored_type
+      method_name = "visit_#{node.underscored_type}" if node.underscored_type
 
-      answer && respond_to?(answer) ? public_send(answer, node) : visit_children(node)
+      method_name && respond_to?(method_name) ? public_send(method_name, node) : visit_children(node)
 
       nil
     end
