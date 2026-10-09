@@ -15,6 +15,9 @@ end
 
 require_relative "lightningcss/options"
 require_relative "lightningcss/result"
+require_relative "lightningcss/node"
+require_relative "lightningcss/parse_result"
+require_relative "lightningcss/visitor"
 require_relative "lightningcss/transformer"
 
 # Ruby bindings for Lightning CSS.
@@ -28,12 +31,24 @@ require_relative "lightningcss/transformer"
 #     LightningCSS.transform(".title { color: red }", scope: "[data-scope-abc]").code
 #     #=> ".title[data-scope-abc]{color:red}"
 #
+# `parse` answers the AST instead, to walk with `LightningCSS::Node` and `LightningCSS::Visitor`:
+#
+#     LightningCSS.parse(".a { color: red }").root.every("declaration").first.property
+#     #=> "color"
+#
 # `LightningCSS::Options` is what the options are read by, and `LightningCSS::Transformer` holds a
 # set of them to reuse across many stylesheets.
 module LightningCSS
   #: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
   def self.transform(code, **options)
     Result.from_json(Backend.transform(code.to_s, Options.serialize(options)))
+  end
+
+  #: (String, ?filename: String?, ?error_recovery: bool) -> LightningCSS::ParseResult
+  def self.parse(code, **options)
+    serialized = Options.serialize(options, Options::PARSE, "a parse")
+
+    ParseResult.from_json(Backend.parse(code.to_s, serialized), code.to_s)
   end
 
   #: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result

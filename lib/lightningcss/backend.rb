@@ -9,6 +9,11 @@ module LightningCSS
       end
 
       #: (String, String) -> String
+      def parse(_code, _options_json)
+        unavailable(__method__)
+      end
+
+      #: (String, String) -> String
       def transform_style_attribute(_code, _options_json)
         unavailable(__method__)
       end

@@ -26,6 +26,11 @@ module LightningCSS
       :targets
     ].freeze #: Array[Symbol]
 
+    PARSE = [
+      :filename,
+      :error_recovery
+    ].freeze #: Array[Symbol]
+
     BUNDLE = [
       :minify,
       :error_recovery,

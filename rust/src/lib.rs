@@ -21,7 +21,7 @@ use lightningcss::bundler::{BundleErrorKind, Bundler, FileProvider};
 use lightningcss::stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleAttribute, StyleSheet};
 use lightningcss::visitor::Visit;
 
-use crate::options::{TransformOptions, TransformResult};
+use crate::options::{ParseResult, TransformOptions, TransformResult};
 use crate::scope::Scoper;
 
 pub const VERSION: &str = env!("GEM_VERSION");
@@ -123,6 +123,26 @@ unsafe fn borrow_options(pointer: *const c_char) -> Result<TransformOptions, Fai
   }
 
   serde_json::from_str(json).map_err(|error| Failure::option(format!("Invalid options: {error}")))
+}
+
+fn parse_source<'i>(code: &'i str, options: &TransformOptions) -> Result<ParseResult<StyleSheet<'i>>, Failure> {
+  let collected = Arc::new(RwLock::new(Vec::new()));
+
+  let parser_options = ParserOptions {
+    filename: options.filename.clone().unwrap_or_default(),
+    error_recovery: options.error_recovery,
+    warnings: Some(collected.clone()),
+    ..ParserOptions::default()
+  };
+
+  let stylesheet = StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(error.to_string()))?;
+
+  let warnings = collected
+    .read()
+    .map(|warnings| warnings.iter().map(|warning| warning.to_string()).collect())
+    .unwrap_or_default();
+
+  Ok(ParseResult { stylesheet, warnings })
 }
 
 fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformResult, Failure> {
@@ -295,7 +315,7 @@ fn transform_attribute(code: &str, options: &TransformOptions) -> Result<Transfo
   })
 }
 
-fn to_result(outcome: Result<TransformResult, Failure>) -> LightningCssResult {
+fn to_result(outcome: Result<impl serde::Serialize, Failure>) -> LightningCssResult {
   match outcome {
     Ok(result) => match serde_json::to_string(&result) {
       Ok(json) => LightningCssResult::ok(json),
@@ -321,6 +341,21 @@ pub unsafe extern "C" fn lightningcss_transform(
   };
 
   to_result(transform_source(code, &options))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn lightningcss_parse(code: *const c_char, options_json: *const c_char) -> LightningCssResult {
+  let code = match borrow_str(code, "code") {
+    Ok(code) => code,
+    Err(failure) => return LightningCssResult::err(failure),
+  };
+
+  let options = match borrow_options(options_json) {
+    Ok(options) => options,
+    Err(failure) => return LightningCssResult::err(failure),
+  };
+
+  to_result(parse_source(code, &options))
 }
 
 #[no_mangle]
