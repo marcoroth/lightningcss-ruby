@@ -178,7 +178,7 @@ module LightningCSS
     def described_field(key, value)
       case value
       when Array
-        "#{key}=#{value.empty? ? "[]" : "[... #{value.length} #{value.length == 1 ? "item" : "items"}]"}"
+        "#{key}=#{value.empty? ? "[]" : "[... #{counted(value)}]"}"
       when Hash
         type = Node.new(value, self, key).type
 
@@ -186,6 +186,11 @@ module LightningCSS
       else
         "#{key}=#{value.inspect}"
       end
+    end
+
+    #: (Array[untyped]) -> String
+    def counted(items)
+      "#{items.length} #{items.length == 1 ? "item" : "items"}"
     end
 
     #: (String) -> String?

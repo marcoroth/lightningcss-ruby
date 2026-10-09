@@ -5,9 +5,9 @@ module LightningCSS
   #
   #     root = LightningCSS.parse(".a { color: red }").root
   #
-  #     root.type                    #=> "stylesheet"
-  #     root.every("declaration")    #=> every declaration in the stylesheet
-  #     root.rules.first.value.location   #=> {"source_index" => 0, "line" => 0, "column" => 1}
+  #     root.type                        #=> "stylesheet"
+  #     root.every("declaration")        #=> every declaration in the stylesheet
+  #     root.rules.first.value.location  #=> {"source_index" => 0, "line" => 0, "column" => 1}
   #
   # Every object in the tree is a node, so reads chain all the way down. Most say what they are
   # with their own `type`. The stylesheet, a declaration block, and a declaration do not, so a node
@@ -91,6 +91,9 @@ module LightningCSS
 
     # : (String, untyped) -> String
     def described_field: (String, untyped) -> String
+
+    # : (Array[untyped]) -> String
+    def counted: (Array[untyped]) -> String
 
     # : (String) -> String?
     def field_for: (String) -> String?
