@@ -1,0 +1,101 @@
+# Generated from lib/lightningcss/node.rb with RBS::Inline
+
+module LightningCSS
+  # One object in the AST Lightning CSS parsed a stylesheet to.
+  #
+  #     root = LightningCSS.parse(".a { color: red }").root
+  #
+  #     root.type                    #=> "stylesheet"
+  #     root.every("declaration")    #=> every declaration in the stylesheet
+  #     root.rules.first.value.location   #=> {"source_index" => 0, "line" => 0, "column" => 1}
+  #
+  # Every object in the tree is a node, so reads chain all the way down. Most say what they are
+  # with their own `type`. The stylesheet, a declaration block, and a declaration do not, so a node
+  # names those from where it sits.
+  class Node
+    include Enumerable[LightningCSS::Node]
+
+    POSITION: Array[String]
+
+    DECLARATIONS: Array[String]
+
+    attr_reader parent: LightningCSS::Node?
+
+    attr_reader field: String?
+
+    # : (Hash[String, untyped], ?LightningCSS::Node?, ?String?) -> void
+    def initialize: (Hash[String, untyped], ?LightningCSS::Node?, ?String?) -> void
+
+    # : () -> String?
+    def type: () -> String?
+
+    # : () -> String?
+    def underscored_type: () -> String?
+
+    # : () -> bool
+    def rule?: () -> bool
+
+    # : () -> Hash[String, Integer]?
+    def location: () -> Hash[String, Integer]?
+
+    # : (String) -> untyped
+    def []: (String) -> untyped
+
+    # : () -> Array[String]
+    def keys: () -> Array[String]
+
+    # : () -> Hash[String, untyped]
+    def to_h: () -> Hash[String, untyped]
+
+    # : (?untyped) -> String
+    def to_json: (?untyped) -> String
+
+    # : (Array[Symbol]?) -> Hash[Symbol, untyped]
+    def deconstruct_keys: (Array[Symbol]?) -> Hash[Symbol, untyped]
+
+    # : () -> Array[LightningCSS::Node]
+    def child_nodes: () -> Array[LightningCSS::Node]
+
+    # : () { (LightningCSS::Node) -> void } -> void
+    # : () -> Enumerator[LightningCSS::Node, void]
+    def each: () { (LightningCSS::Node) -> void } -> void
+            | () -> Enumerator[LightningCSS::Node, void]
+
+    # : () -> Array[LightningCSS::Node]
+    def ancestors: () -> Array[LightningCSS::Node]
+
+    # : (String) -> Array[LightningCSS::Node]
+    def every: (String) -> Array[LightningCSS::Node]
+
+    # : () -> Hash[String, untyped]
+    def fields: () -> Hash[String, untyped]
+
+    # : () -> String
+    def inspect: () -> String
+
+    # : (Symbol, *untyped) -> untyped
+    def method_missing: (Symbol, *untyped) -> untyped
+
+    # : (Symbol, ?bool) -> bool
+    def respond_to_missing?: (Symbol, ?bool) -> bool
+
+    attr_reader attributes: Hash[String, untyped]
+
+    private
+
+    # : () -> String?
+    def inferred_type: () -> String?
+
+    # : (untyped, String) -> Array[LightningCSS::Node]
+    def nodes_in: (untyped, String) -> Array[LightningCSS::Node]
+
+    # : (String, untyped) -> String
+    def described_field: (String, untyped) -> String
+
+    # : (String) -> String?
+    def field_for: (String) -> String?
+
+    # : (untyped, String) -> untyped
+    def wrap: (untyped, String) -> untyped
+  end
+end
