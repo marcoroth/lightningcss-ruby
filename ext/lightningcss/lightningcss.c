@@ -90,6 +90,12 @@ static VALUE rb_transform(VALUE self, VALUE code, VALUE options) {
   return call(lightningcss_transform, code, options);
 }
 
+static VALUE rb_parse(VALUE self, VALUE code, VALUE options) {
+  (void) self;
+
+  return call(lightningcss_parse, code, options);
+}
+
 static VALUE rb_transform_style_attribute(VALUE self, VALUE code, VALUE options) {
   (void) self;
 
@@ -123,6 +129,7 @@ void Init_lightningcss(void) {
   rb_eOptionError = rb_define_class_under(rb_mLightningCSS, "OptionError", rb_eError);
   rb_eBundleError = rb_define_class_under(rb_mLightningCSS, "BundleError", rb_eError);
 
+  rb_define_singleton_method(rb_mBackend, "parse", rb_parse, 2);
   rb_define_singleton_method(rb_mBackend, "transform", rb_transform, 2);
   rb_define_singleton_method(rb_mBackend, "transform_style_attribute", rb_transform_style_attribute, 2);
   rb_define_singleton_method(rb_mBackend, "bundle", rb_bundle, 2);

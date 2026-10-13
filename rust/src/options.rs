@@ -90,6 +90,12 @@ impl TransformOptions {
 }
 
 #[derive(Debug, Serialize)]
+pub struct ParseResult<T> {
+  pub stylesheet: T,
+  pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
 pub struct TransformResult {
   pub code: String,
   #[serde(skip_serializing_if = "Option::is_none")]

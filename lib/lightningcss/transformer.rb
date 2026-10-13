@@ -28,6 +28,11 @@ module LightningCSS
 
     alias call transform
 
+    #: (String, ?filename: String?, ?error_recovery: bool) -> LightningCSS::ParseResult
+    def parse(code, **overrides)
+      LightningCSS.parse(code, **options.slice(*Options::PARSE), **overrides)
+    end
+
     #: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
     def bundle(path, **overrides)
       LightningCSS.bundle(path, **options, **overrides)

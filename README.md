@@ -141,6 +141,113 @@ LightningCSS.transform_style_attribute("color: #ff0000; border: none", minify: t
 
 Having no selectors and no names, it takes neither `scope` nor `css_modules`, and says so when given one.
 
+#### Parsing
+
+`parse` answers what Lightning CSS read a stylesheet as, without printing anything. It takes `filename` and `error_recovery`, the two options that change how a stylesheet is read.
+
+```ruby
+parsed = LightningCSS.parse(".card .title:hover { color: #f00 }")
+
+parsed.stylesheet   #=> the AST exactly as Lightning CSS serializes it
+parsed.warnings     #=> []
+parsed.source       #=> ".card .title:hover { color: #f00 }"
+```
+
+The AST is Lightning CSS's own, so its shapes are the ones its [JavaScript visitors](https://lightningcss.dev/transforms.html) see and [`lightningcss/node/ast.d.ts`](https://github.com/parcel-bundler/lightningcss/blob/master/node/ast.d.ts) describes. It is what Lightning CSS understood, not what was written: `#f00` reads as an `rgb` with `r` of `255.0`, and a `0` margin reads as `0px`.
+
+#### Walking the AST
+
+`root` answers the stylesheet as a `LightningCSS::Node`, which walks, reads its fields by name, and knows what it sits inside.
+
+```ruby
+root = LightningCSS.parse(source).root
+
+root.type                   #=> "stylesheet"
+root.keys                   #=> the fields this node carries
+root.fields                 #=> those fields and their values, without its type and location
+root.child_nodes            #=> the nodes directly under it
+root.every("declaration")   #=> every declaration in the stylesheet
+root.each                   #=> an Enumerator over every node
+```
+
+Every object in the tree is a node, so reads chain all the way down.
+
+```ruby
+rule = root.rules.first
+
+rule.type                                  #=> "style"
+rule.value.selectors.first.map(&:type)     #=> ["class", "combinator", "class", "pseudo-class"]
+rule.value.declarations.declarations.first.value.r
+#=> 255.0
+```
+
+Most objects say what they are with their own `type`. The stylesheet, a declaration block, and a declaration do not, so a node names those `"stylesheet"`, `"declaration-block"`, and `"declaration"` from where it sits. Anything else without a `type`, like the `value` a rule wraps, answers `nil`.
+
+Inspecting a node shows every field it carries.
+
+```
+#<LightningCSS::Node style value=#<LightningCSS::Node>>
+#<LightningCSS::Node location=0:1 selectors=[... 1 item] declarations=#<LightningCSS::Node declaration-block> rules=[]>
+#<LightningCSS::Node declaration property="color" value=#<LightningCSS::Node rgb>>
+```
+
+Lightning CSS names its fields in camelCase, and a field answers to its snake_case name too.
+
+```ruby
+block.important_declarations   # the same field as block.importantDeclarations
+query.media_queries            # mediaQueries
+```
+
+Lightning CSS records where each rule starts and nothing else, so `location` is a rule's line, counted from 0, and its column, counted from 1 in UTF-16 code units. There are no end positions, so a node has no `slice` and there is no `at(offset)`.
+
+```ruby
+rule.value.location
+#=> {"source_index" => 0, "line" => 0, "column" => 1}
+```
+
+`ancestors` answers what a node sits inside, and `rule?` says whether it is a rule.
+
+```ruby
+declaration = root.every("declaration").first
+declaration.ancestors.find(&:rule?).type
+#=> "style"
+```
+
+Nodes pattern match, and nest, since a field holding an object comes back as a node. Patterns take snake_case names, and a node's `type` matches even when Lightning CSS gave it none.
+
+```ruby
+declaration => { type: "declaration", property:, value: { type: "rgb", r: } }
+property   #=> "color"
+r          #=> 255.0
+```
+
+`to_h` and `to_json` answer the AST the node wraps.
+
+```ruby
+declaration.value.to_h
+#=> {"type" => "rgb", "r" => 255.0, "g" => 0.0, "b" => 0.0, "alpha" => 1.0}
+```
+
+`LightningCSS::Visitor` answers a node with the method named after its type, and walks through anything nothing answers.
+
+```ruby
+class Colors < LightningCSS::Visitor
+  def visit_style_rule(node)
+    puts node.value.location["line"]
+
+    visit_children(node)
+  end
+
+  def visit_declaration(node)
+    puts node.property
+  end
+end
+
+Colors.new.visit(LightningCSS.parse(source))
+```
+
+A rule is answered as one, as in `visit_style_rule`, `visit_media_rule`, or `visit_namespace_rule`. Lightning CSS calls the rule `style`, but `namespace` and `nesting` are also parts of a selector, so `visit_namespace` answers `svg|rect` and `visit_namespace_rule` answers `@namespace`. Hyphens become underscores, so a `pseudo-class` is answered by `visit_pseudo_class`.
+
 #### Reusing options
 
 `LightningCSS::Transformer` holds a set of options to use across many stylesheets. Options given to a call are merged over the ones it was built with.
@@ -154,6 +261,8 @@ transformer.with(scope: "[s]")
 ```
 
 It answers `call` as well, so it can be handed to anything expecting something callable.
+
+`transformer.parse` reads with the `filename` and `error_recovery` it holds and leaves the rest, which only matter to printing.
 
 ### Options
 

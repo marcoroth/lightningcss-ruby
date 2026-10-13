@@ -21,6 +21,9 @@ module LightningCSS
 
     alias call transform
 
+    # : (String, ?filename: String?, ?error_recovery: bool) -> LightningCSS::ParseResult
+    def parse: (String, ?filename: String?, ?error_recovery: bool) -> LightningCSS::ParseResult
+
     # : (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
     def bundle: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
 
