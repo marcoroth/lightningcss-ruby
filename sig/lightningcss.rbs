@@ -11,7 +11,7 @@
 #     LightningCSS.transform(".title { color: red }", scope: "[data-scope-abc]").code
 #     #=> ".title[data-scope-abc]{color:red}"
 #
-# `parse` answers the AST instead, to walk with `LightningCSS::Node` and `LightningCSS::Visitor`:
+# `parse` returns the AST instead, to walk with `LightningCSS::Node` and `LightningCSS::Visitor`:
 #
 #     LightningCSS.parse(".a { color: red }").root.every("declaration").first.property
 #     #=> "color"

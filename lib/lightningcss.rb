@@ -31,13 +31,14 @@ require_relative "lightningcss/transformer"
 #     LightningCSS.transform(".title { color: red }", scope: "[data-scope-abc]").code
 #     #=> ".title[data-scope-abc]{color:red}"
 #
-# `parse` answers the AST instead, to walk with `LightningCSS::Node` and `LightningCSS::Visitor`:
+# `parse` returns the AST instead, to walk with `LightningCSS::Node` and `LightningCSS::Visitor`:
 #
 #     LightningCSS.parse(".a { color: red }").root.every("declaration").first.property
 #     #=> "color"
 #
 # `LightningCSS::Options` is what the options are read by, and `LightningCSS::Transformer` holds a
 # set of them to reuse across many stylesheets.
+#
 module LightningCSS
   #: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
   def self.transform(code, **options)

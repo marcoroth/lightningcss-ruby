@@ -168,9 +168,12 @@ module LightningCSS
     #: (untyped, String) -> Array[LightningCSS::Node]
     def nodes_in(value, key)
       case value
-      when Hash then [Node.new(value, self, key)]
-      when Array then value.flat_map { |item| nodes_in(item, key) }
-      else []
+      when Hash
+        [Node.new(value, self, key)]
+      when Array
+        value.flat_map { |item| nodes_in(item, key) }
+      else
+        []
       end
     end
 
@@ -205,9 +208,12 @@ module LightningCSS
     #: (untyped, String) -> untyped
     def wrap(value, key)
       case value
-      when Hash then key == "loc" ? value : Node.new(value, self, key)
-      when Array then value.map { |item| wrap(item, key) }
-      else value
+      when Hash
+        key == "loc" ? value : Node.new(value, self, key)
+      when Array
+        value.map { |item| wrap(item, key) }
+      else
+        value
       end
     end
   end

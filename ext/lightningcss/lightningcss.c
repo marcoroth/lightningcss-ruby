@@ -129,8 +129,8 @@ void Init_lightningcss(void) {
   rb_eOptionError = rb_define_class_under(rb_mLightningCSS, "OptionError", rb_eError);
   rb_eBundleError = rb_define_class_under(rb_mLightningCSS, "BundleError", rb_eError);
 
-  rb_define_singleton_method(rb_mBackend, "transform", rb_transform, 2);
   rb_define_singleton_method(rb_mBackend, "parse", rb_parse, 2);
+  rb_define_singleton_method(rb_mBackend, "transform", rb_transform, 2);
   rb_define_singleton_method(rb_mBackend, "transform_style_attribute", rb_transform_style_attribute, 2);
   rb_define_singleton_method(rb_mBackend, "bundle", rb_bundle, 2);
   rb_define_singleton_method(rb_mBackend, "version", rb_native_version, 0);
