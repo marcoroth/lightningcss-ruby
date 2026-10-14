@@ -7,13 +7,27 @@ module LightningCSS
     test "raises on CSS it cannot parse" do
       error = assert_raises(LightningCSS::ParseError) { LightningCSS.transform(". { color: red }") }
 
-      assert_equal 'Expected identifier in class selector, got WhiteSpace(" ") at :0:2', error.message
+      assert_equal 'Expected identifier in class selector, got WhiteSpace(" ") at :1:2', error.message
     end
 
     test "says where it could not parse" do
       error = assert_raises(LightningCSS::ParseError) { LightningCSS.transform("!!! { color: red }") }
 
-      assert_equal "Invalid empty selector at :0:1", error.message
+      assert_equal "Invalid empty selector at :1:1", error.message
+    end
+
+    test "counts lines from 1 and columns from 1" do
+      css = ".a { color: red; }\n.b, { color: blue; }\n"
+      error = assert_raises(LightningCSS::ParseError) { LightningCSS.transform(css, filename: "main.css") }
+
+      assert_equal "Invalid empty selector at main.css:2:5", error.message
+    end
+
+    test "counts the lines of a warning from 1" do
+      css = ".a { color: red; }\n.b, { color: blue; }\n"
+      warnings = LightningCSS.transform(css, filename: "main.css", error_recovery: true).warnings
+
+      assert_equal ["Invalid empty selector at main.css:2:5"], warnings
     end
 
     test "closes an unclosed block the way a browser does" do

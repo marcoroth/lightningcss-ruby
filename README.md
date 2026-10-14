@@ -95,7 +95,7 @@ result.exports
 #=> {"application" => "_8Z4fiW_application"}
 
 result.warnings.first
-#=> "'deep' is not recognized as a valid pseudo-class. ... at app/assets/stylesheets/layout.css:0:9"
+#=> "'deep' is not recognized as a valid pseudo-class. ... at app/assets/stylesheets/layout.css:1:9"
 ```
 
 #### CSS modules
@@ -338,7 +338,7 @@ result.warnings?
 #=> true
 
 result.warnings.first
-#=> "'deep' is not recognized as a valid pseudo-class. Did you mean '::deep' (pseudo-element) or is this a typo? at :0:9"
+#=> "'deep' is not recognized as a valid pseudo-class. Did you mean '::deep' (pseudo-element) or is this a typo? at :1:9"
 
 result.code
 #=> ".a:deep(.b){color:red}"

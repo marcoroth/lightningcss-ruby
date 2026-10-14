@@ -60,7 +60,7 @@ module LightningCSS
     test "refuses a fragment that is not a selector" do
       error = assert_raises(LightningCSS::OptionError) { scoped(".a { color: red }", "((") }
 
-      assert_equal 'Invalid scope selector "((" at :0:1', error.message
+      assert_equal 'Invalid scope selector "((" at :1:1', error.message
     end
 
     test "refuses a fragment carrying more than one selector" do

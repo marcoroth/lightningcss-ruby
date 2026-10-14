@@ -37,7 +37,7 @@ module LightningCSS
         LightningCSS.transform_style_attribute(".a { color: red }")
       end
 
-      assert_equal "Unexpected token Delim('.') at :0:1", error.message
+      assert_equal "Unexpected token Delim('.') at :1:1", error.message
     end
 
     test "has no names to compile, so it reports no exports" do

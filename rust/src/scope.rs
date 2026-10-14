@@ -29,7 +29,8 @@ impl<'i> Scoper<'i> {
     let list = SelectorList::parse_string_with_options(fragment, ParserOptions::default()).map_err(|error| {
       format!(
         "Invalid scope selector {fragment:?} at :{}:{}",
-        error.location.line, error.location.column
+        error.location.line + 1,
+        error.location.column
       )
     })?;
 

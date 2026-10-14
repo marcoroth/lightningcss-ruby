@@ -10,7 +10,7 @@ module LightningCSS
     BROKEN = File.expand_path("../fixtures/bundle/broken.css", __dir__)
     UNREADABLE = File.expand_path("../fixtures/bundle/nested/broken.css", __dir__)
     IMPORTED = File.expand_path("../fixtures/bundle/nested/warned.css", __dir__)
-    WARNING = "'deep' is not recognized as a valid pseudo-class. Did you mean '::deep' (pseudo-element) or is this a typo? at #{IMPORTED}:0:9".freeze
+    WARNING = "'deep' is not recognized as a valid pseudo-class. Did you mean '::deep' (pseudo-element) or is this a typo? at #{IMPORTED}:1:9".freeze
 
     test "resolves the imports a stylesheet was written with, in the order it imported them" do
       code = LightningCSS.bundle(ENTRY, minify: true).code
@@ -83,7 +83,7 @@ module LightningCSS
     test "raises a parse error for CSS it could not read, wherever it imported it from" do
       error = assert_raises(LightningCSS::ParseError) { LightningCSS.bundle(BROKEN) }
 
-      assert_equal "Invalid empty selector at #{UNREADABLE}:0:1", error.message
+      assert_equal "Invalid empty selector at #{UNREADABLE}:1:1", error.message
     end
 
     test "refuses a filename, naming every file it reads by the path it read it from" do

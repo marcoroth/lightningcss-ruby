@@ -18,6 +18,7 @@ use std::ptr;
 use std::sync::{Arc, RwLock};
 
 use lightningcss::bundler::{BundleErrorKind, Bundler, FileProvider};
+use lightningcss::error::Error;
 use lightningcss::stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleAttribute, StyleSheet};
 use lightningcss::visitor::Visit;
 
@@ -65,6 +66,13 @@ impl LightningCssResult {
 pub struct Failure {
   code: LightningCssErrorCode,
   message: String,
+}
+
+fn describe<T: std::fmt::Display>(error: &Error<T>) -> String {
+  match &error.loc {
+    Some(loc) => format!("{} at {}:{}:{}", error.kind, loc.filename, loc.line + 1, loc.column),
+    None => error.kind.to_string(),
+  }
 }
 
 impl Failure {
@@ -135,11 +143,11 @@ fn parse_source<'i>(code: &'i str, options: &TransformOptions) -> Result<ParseRe
     ..ParserOptions::default()
   };
 
-  let stylesheet = StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(error.to_string()))?;
+  let stylesheet = StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(describe(&error)))?;
 
   let warnings = collected
     .read()
-    .map(|warnings| warnings.iter().map(|warning| warning.to_string()).collect())
+    .map(|warnings| warnings.iter().map(describe).collect())
     .unwrap_or_default();
 
   Ok(ParseResult { stylesheet, warnings })
@@ -162,7 +170,7 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
     ..ParserOptions::default()
   };
 
-  let mut stylesheet = StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(error.to_string()))?;
+  let mut stylesheet = StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(describe(&error)))?;
 
   if let Some(fragment) = &options.scope {
     let mut scoper = Scoper::parse(fragment).map_err(Failure::option)?;
@@ -201,7 +209,7 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
 
   let warnings = collected
     .read()
-    .map(|warnings| warnings.iter().map(|warning| warning.to_string()).collect())
+    .map(|warnings| warnings.iter().map(describe).collect())
     .unwrap_or_default();
 
   Ok(TransformResult {
@@ -232,8 +240,8 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
   let mut stylesheet = bundler
     .bundle(std::path::Path::new(path))
     .map_err(|error| match &error.kind {
-      BundleErrorKind::ParserError(_) => Failure::parse(error.to_string()),
-      _ => Failure::bundle(error.to_string()),
+      BundleErrorKind::ParserError(_) => Failure::parse(describe(&error)),
+      _ => Failure::bundle(describe(&error)),
     })?;
 
   if let Some(fragment) = &options.scope {
@@ -270,7 +278,7 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
 
   let warnings = collected
     .read()
-    .map(|warnings| warnings.iter().map(|warning| warning.to_string()).collect())
+    .map(|warnings| warnings.iter().map(describe).collect())
     .unwrap_or_default();
 
   Ok(TransformResult {
@@ -287,7 +295,7 @@ fn transform_attribute(code: &str, options: &TransformOptions) -> Result<Transfo
     ..ParserOptions::default()
   };
 
-  let mut attribute = StyleAttribute::parse(code, parser_options).map_err(|error| Failure::parse(error.to_string()))?;
+  let mut attribute = StyleAttribute::parse(code, parser_options).map_err(|error| Failure::parse(describe(&error)))?;
 
   let targets = options.to_targets().map_err(Failure::option)?;
 
