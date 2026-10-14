@@ -76,6 +76,8 @@ LightningCSS.transform(".a { color: oklch(60% .2 30) }", targets: { safari: "15.
 
 Prefer a `String` for a minor version above 9, since `16.10` as a `Float` is `16.1`.
 
+The browsers it reads are `android`, `chrome`, `edge`, `firefox`, `ie`, `ios_saf` (or `ios`), `opera`, `safari`, and `samsung`. Any other name raises a `LightningCSS::OptionError`.
+
 #### Bundling
 
 `bundle` resolves the `@import` statements a stylesheet was written with by reading the files they name, so it takes a path on disk to the entry stylesheet.

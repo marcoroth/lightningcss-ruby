@@ -85,6 +85,30 @@ module LightningCSS
       end
     end
 
+    test "raises an option error for a browser it does not know" do
+      error = assert_raises(OptionError) { LightningCSS.transform(".a{}", targets: { safar: 15 }) }
+
+      assert_equal "Unknown browser in targets: safar", error.message
+    end
+
+    test "names every browser it does not know, in order" do
+      error = assert_raises(OptionError) { LightningCSS.transform(".a{}", targets: { netscape: 4, chrome: 100, mosaic: 1 }) }
+
+      assert_equal "Unknown browsers in targets: mosaic, netscape", error.message
+    end
+
+    test "raises for a browser it does not know before reading any version" do
+      error = assert_raises(OptionError) { LightningCSS.transform(".a{}", targets: { safari: "x", safar: 15 }) }
+
+      assert_equal "Unknown browser in targets: safar", error.message
+    end
+
+    test "reads ios as ios_saf" do
+      code = LightningCSS.transform(".a { color: oklch(60% .2 30) }", targets: { ios: "15.4" }, minify: true).code
+
+      assert_equal ".a{color:oklch(60% .2 30)}", code
+    end
+
     test "raises an option error for a negative version" do
       error = assert_raises(OptionError) { LightningCSS.transform(".a{}", targets: { safari: -1 }) }
 

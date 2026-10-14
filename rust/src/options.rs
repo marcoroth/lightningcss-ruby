@@ -102,11 +102,31 @@ impl Version {
   }
 }
 
+const BROWSERS: [&str; 10] = [
+  "android", "chrome", "edge", "firefox", "ie", "ios", "ios_saf", "opera", "safari", "samsung",
+];
+
 impl TransformOptions {
   pub fn to_targets(&self) -> Result<Targets, String> {
     let Some(versions) = &self.targets else {
       return Ok(Targets::default());
     };
+
+    let mut unknown: Vec<&str> = versions
+      .keys()
+      .map(String::as_str)
+      .filter(|name| !BROWSERS.contains(name))
+      .collect();
+
+    if !unknown.is_empty() {
+      unknown.sort_unstable();
+
+      return Err(format!(
+        "Unknown browser{} in targets: {}",
+        if unknown.len() > 1 { "s" } else { "" },
+        unknown.join(", ")
+      ));
+    }
 
     let mut browsers = Browsers::default();
 
@@ -127,7 +147,7 @@ impl TransformOptions {
         "opera" => browsers.opera = encoded,
         "safari" => browsers.safari = encoded,
         "samsung" => browsers.samsung = encoded,
-        _ => {}
+        _ => unreachable!(),
       }
     }
 
