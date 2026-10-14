@@ -174,14 +174,12 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
 
   let targets = options.to_targets();
 
-  if options.minify {
-    stylesheet
-      .minify(MinifyOptions {
-        targets,
-        ..MinifyOptions::default()
-      })
-      .map_err(|error| Failure::internal(format!("Failed to minify: {error}")))?;
-  }
+  stylesheet
+    .minify(MinifyOptions {
+      targets,
+      ..MinifyOptions::default()
+    })
+    .map_err(|error| Failure::internal(format!("Failed to minify: {error}")))?;
 
   let printed = stylesheet
     .to_css(PrinterOptions {
@@ -248,14 +246,12 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
 
   let targets = options.to_targets();
 
-  if options.minify {
-    stylesheet
-      .minify(MinifyOptions {
-        targets,
-        ..MinifyOptions::default()
-      })
-      .map_err(|error| Failure::internal(format!("Failed to minify: {error}")))?;
-  }
+  stylesheet
+    .minify(MinifyOptions {
+      targets,
+      ..MinifyOptions::default()
+    })
+    .map_err(|error| Failure::internal(format!("Failed to minify: {error}")))?;
 
   let printed = stylesheet
     .to_css(PrinterOptions {
