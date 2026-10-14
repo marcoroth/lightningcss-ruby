@@ -43,12 +43,12 @@ static VALUE error_class_for(enum LightningCssErrorCode code) {
 
 static VALUE unwrap(struct LightningCssResult result) {
   if (result.error) {
-    VALUE message = make_utf8_string(result.error);
+    VALUE payload = make_utf8_string(result.error);
     VALUE error_class = error_class_for(result.code);
 
     lightningcss_result_free(result);
 
-    rb_raise(error_class, "%s", StringValueCStr(message));
+    rb_exc_raise(rb_funcall(error_class, rb_intern("from_json"), 1, payload));
   }
 
   if (!result.value) {

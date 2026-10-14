@@ -9,7 +9,7 @@ module LightningCSS
   class ParseResult
     attr_reader :source #: String?
     attr_reader :stylesheet #: Hash[String, untyped]
-    attr_reader :warnings #: Array[String]
+    attr_reader :warnings #: Array[LightningCSS::Warning]
 
     #: (String, ?String?) -> LightningCSS::ParseResult
     def self.from_json(payload, source = nil)
@@ -18,11 +18,11 @@ module LightningCSS
       new(
         source: source,
         stylesheet: parsed.fetch("stylesheet"),
-        warnings: parsed.fetch("warnings")
+        warnings: parsed.fetch("warnings").map { |warning| Warning.from_hash(warning) }
       )
     end
 
-    #: (stylesheet: Hash[String, untyped], warnings: Array[String], ?source: String?) -> void
+    #: (stylesheet: Hash[String, untyped], warnings: Array[LightningCSS::Warning], ?source: String?) -> void
     def initialize(stylesheet:, warnings:, source: nil)
       @source = source
       @stylesheet = stylesheet.freeze
@@ -44,7 +44,7 @@ module LightningCSS
     #: () -> String
     def inspect
       parts = ["rules=#{stylesheet.fetch("rules").length}"]
-      parts << "warnings=#{warnings.inspect}" if warnings?
+      parts << "warnings=#{warnings.map(&:to_s).inspect}" if warnings?
 
       "#<#{self.class.name} #{parts.join(" ")}>"
     end

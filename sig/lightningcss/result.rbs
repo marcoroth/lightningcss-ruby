@@ -14,13 +14,13 @@ module LightningCSS
 
     attr_reader exports: Hash[String, String]?
 
-    attr_reader warnings: Array[String]
+    attr_reader warnings: Array[LightningCSS::Warning]
 
     # : (String) -> LightningCSS::Result
     def self.from_json: (String) -> LightningCSS::Result
 
-    # : (code: String, warnings: Array[String], ?exports: Hash[String, String]?) -> void
-    def initialize: (code: String, warnings: Array[String], ?exports: Hash[String, String]?) -> void
+    # : (code: String, warnings: Array[LightningCSS::Warning], ?exports: Hash[String, String]?) -> void
+    def initialize: (code: String, warnings: Array[LightningCSS::Warning], ?exports: Hash[String, String]?) -> void
 
     # : () -> bool
     def warnings?: () -> bool

@@ -1,0 +1,36 @@
+# Generated from lib/lightningcss/warning.rb with RBS::Inline
+
+module LightningCSS
+  class Warning
+    attr_reader message: String
+
+    attr_reader type: String?
+
+    attr_reader location: LightningCSS::Location?
+
+    # : (Hash[String, untyped]) -> LightningCSS::Warning
+    def self.from_hash: (Hash[String, untyped]) -> LightningCSS::Warning
+
+    # : (message: String, ?type: String?, ?location: LightningCSS::Location?) -> void
+    def initialize: (message: String, ?type: String?, ?location: LightningCSS::Location?) -> void
+
+    # : () -> Hash[Symbol, untyped]
+    def to_h: () -> Hash[Symbol, untyped]
+
+    # : () -> String
+    def to_s: () -> String
+
+    alias to_str to_s
+
+    # : (untyped) -> bool
+    def ==: (untyped) -> bool
+
+    alias eql? ==
+
+    # : () -> Integer
+    def hash: () -> Integer
+
+    # : () -> String
+    def inspect: () -> String
+  end
+end

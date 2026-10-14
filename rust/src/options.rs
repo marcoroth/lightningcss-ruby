@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use lightningcss::css_modules::{Config as CssModulesConfig, Pattern};
+use lightningcss::error::Error;
 use lightningcss::targets::{Browsers, Targets};
 use serde::{Deserialize, Serialize};
 
@@ -137,7 +138,7 @@ impl TransformOptions {
 #[derive(Debug, Serialize)]
 pub struct ParseResult<T> {
   pub stylesheet: T,
-  pub warnings: Vec<String>,
+  pub warnings: Vec<Diagnostic>,
 }
 
 #[derive(Debug, Serialize)]
@@ -145,5 +146,66 @@ pub struct TransformResult {
   pub code: String,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub exports: Option<HashMap<String, String>>,
-  pub warnings: Vec<String>,
+  pub warnings: Vec<Diagnostic>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Diagnostic {
+  pub message: String,
+  #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+  pub kind: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub location: Option<Location>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Location {
+  pub filename: Option<String>,
+  pub line: u32,
+  pub column: u32,
+}
+
+impl Diagnostic {
+  pub fn from_error<T: std::fmt::Display + Serialize>(error: &Error<T>) -> Self {
+    Self {
+      message: error.kind.to_string(),
+      kind: serde_json::to_value(&error.kind).ok().as_ref().and_then(type_of),
+      location: error.loc.as_ref().map(|location| Location {
+        filename: (!location.filename.is_empty()).then(|| location.filename.clone()),
+        line: location.line + 1,
+        column: location.column.saturating_sub(1),
+      }),
+    }
+  }
+}
+
+impl From<String> for Diagnostic {
+  fn from(message: String) -> Self {
+    Self {
+      message,
+      kind: None,
+      location: None,
+    }
+  }
+}
+
+impl From<&str> for Diagnostic {
+  fn from(message: &str) -> Self {
+    Self::from(message.to_string())
+  }
+}
+
+fn type_of(value: &serde_json::Value) -> Option<String> {
+  match value {
+    serde_json::Value::String(name) => Some(name.clone()),
+    serde_json::Value::Object(fields) => match fields.get("type") {
+      Some(serde_json::Value::String(name)) => Some(name.clone()),
+      _ if fields.len() == 1 => fields.iter().next().map(|(name, inner)| match inner.get("type") {
+        Some(serde_json::Value::String(inner_name)) => inner_name.clone(),
+        _ => name.clone(),
+      }),
+      _ => None,
+    },
+    _ => None,
+  }
 }

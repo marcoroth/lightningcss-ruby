@@ -23,6 +23,34 @@ module LightningCSS
       assert_equal "Invalid empty selector at main.css:2:5", error.message
     end
 
+    test "says where it could not parse, counting lines from 1 and columns from 0" do
+      css = ".a { color: red; }\n.b, { color: blue; }\n"
+      error = assert_raises(LightningCSS::ParseError) { LightningCSS.transform(css, filename: "main.css") }
+
+      assert_equal "SelectorError", error.type
+      assert_equal Location.new(filename: "main.css", line: 2, column: 4), error.location
+    end
+
+    test "names the kind of token it did not expect" do
+      error = assert_raises(LightningCSS::ParseError) { LightningCSS.transform_style_attribute("color: red; .") }
+
+      assert_equal "UnexpectedToken", error.type
+      assert_equal Location.new(filename: nil, line: 1, column: 12), error.location
+    end
+
+    test "has no location for an option it refused" do
+      error = assert_raises(LightningCSS::OptionError) { LightningCSS.transform(".a {}", nonsense: true) }
+
+      assert_nil error.type
+      assert_nil error.location
+    end
+
+    test "has no location for an option the native library refused" do
+      error = assert_raises(LightningCSS::OptionError) { LightningCSS.transform(".a {}", targets: { safari: "x" }) }
+
+      assert_nil error.location
+    end
+
     test "counts the lines of a warning from 1" do
       css = ".a { color: red; }\n.b, { color: blue; }\n"
       warnings = LightningCSS.transform(css, filename: "main.css", error_recovery: true).warnings

@@ -86,6 +86,26 @@ module LightningCSS
       assert_equal "Invalid empty selector at #{UNREADABLE}:1:1", error.message
     end
 
+    test "names the file it could not parse in the error" do
+      error = assert_raises(LightningCSS::ParseError) { LightningCSS.bundle(BROKEN) }
+
+      assert_equal Location.new(filename: UNREADABLE, line: 1, column: 0), error.location
+      assert_equal "SelectorError", error.type
+    end
+
+    test "names the file a warning came from" do
+      warning = LightningCSS.bundle(WARNED).warnings.first
+
+      assert_equal Location.new(filename: IMPORTED, line: 1, column: 8), warning.location
+    end
+
+    test "names the kind of bundle error" do
+      error = assert_raises(LightningCSS::BundleError) { LightningCSS.bundle(MISSING) }
+
+      assert_equal "ResolverError", error.type
+      assert_nil error.location
+    end
+
     test "refuses a filename, naming every file it reads by the path it read it from" do
       error = assert_raises(LightningCSS::OptionError) { LightningCSS.bundle(ENTRY, filename: "x.css") }
 

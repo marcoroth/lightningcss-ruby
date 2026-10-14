@@ -2,6 +2,15 @@
 
 module LightningCSS
   class Error < StandardError
+    attr_reader type: String?
+
+    attr_reader location: LightningCSS::Location?
+
+    # : (String) -> instance
+    def self.from_json: (String) -> instance
+
+    # : (?String?, ?type: String?, ?location: LightningCSS::Location?) -> void
+    def initialize: (?String?, ?type: String?, ?location: LightningCSS::Location?) -> void
   end
 
   class ParseError < Error

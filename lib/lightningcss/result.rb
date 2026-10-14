@@ -13,7 +13,7 @@ module LightningCSS
   class Result
     attr_reader :code #: String
     attr_reader :exports #: Hash[String, String]?
-    attr_reader :warnings #: Array[String]
+    attr_reader :warnings #: Array[LightningCSS::Warning]
 
     #: (String) -> LightningCSS::Result
     def self.from_json(payload)
@@ -22,11 +22,11 @@ module LightningCSS
       new(
         code: parsed.fetch("code"),
         exports: parsed["exports"],
-        warnings: parsed.fetch("warnings")
+        warnings: parsed.fetch("warnings").map { |warning| Warning.from_hash(warning) }
       )
     end
 
-    #: (code: String, warnings: Array[String], ?exports: Hash[String, String]?) -> void
+    #: (code: String, warnings: Array[LightningCSS::Warning], ?exports: Hash[String, String]?) -> void
     def initialize(code:, warnings:, exports: nil)
       @code = code
       @exports = exports
@@ -49,7 +49,7 @@ module LightningCSS
     def inspect
       parts = ["code=#{code.inspect}"]
       parts << "exports=#{exports.inspect}" if exports
-      parts << "warnings=#{warnings.inspect}" if warnings?
+      parts << "warnings=#{warnings.map(&:to_s).inspect}" if warnings?
 
       "#<#{self.class.name} #{parts.join(" ")}>"
     end

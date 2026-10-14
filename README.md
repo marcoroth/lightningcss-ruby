@@ -283,7 +283,7 @@ It answers `call` as well, so it can be handed to anything expecting something c
 | `filename`       | `String`       | The name to use in errors and warnings.                                                |
 | `minify`         | `bool`         | Whether to print the result as small as it goes.                                       |
 | `error_recovery` | `bool`         | Whether to carry on past a rule it cannot read. Off by default, so such a rule raises. |
-| `targets`        | `Hash`         | The browsers being compiled for, each as its major version.                            |
+| `targets`        | `Hash`         | The browsers being compiled for, each with the oldest version supported.               |
 | `css_modules`    | `bool`, `Hash` | Whether to compile as a CSS module, and how.                                           |
 | `scope`          | `String`       | A selector fragment to narrow every rule by.                                           |
 
@@ -337,12 +337,39 @@ result = LightningCSS.transform(".a:deep(.b) { color: red }", minify: true)
 result.warnings?
 #=> true
 
-result.warnings.first
+result.warnings.first.to_s
 #=> "'deep' is not recognized as a valid pseudo-class. Did you mean '::deep' (pseudo-element) or is this a typo? at :1:9"
 
 result.code
 #=> ".a:deep(.b){color:red}"
 ```
+
+### Locations
+
+A warning is a `LightningCSS::Warning` with a `message`, a `type`, and a `location`, the same as a diagnostic in Prism or Herb. A `LightningCSS::Error` carries the same `type` and `location`, and keeps the location in its message.
+
+A `LightningCSS::Location` counts lines from 1 and columns from 0, the same as Prism, Herb, and Yerba, and prints the way an editor reads it:
+
+```ruby
+css = ".a { color: red; }\n.b, { color: blue; }\n"
+
+begin
+  LightningCSS.transform(css, filename: "main.css")
+rescue LightningCSS::ParseError => error
+  error.message  #=> "Invalid empty selector at main.css:2:5"
+  error.type     #=> "SelectorError"
+  error.location #=> #<data LightningCSS::Location filename="main.css", line=2, column=4>
+end
+
+warning = LightningCSS.transform(css, filename: "main.css", error_recovery: true).warnings.first
+
+warning.message       #=> "Invalid empty selector"
+warning.type          #=> "SelectorError"
+warning.location.line #=> 2
+warning.to_s          #=> "Invalid empty selector at main.css:2:5"
+```
+
+A warning converts to the string it always was wherever a `String` is expected and is equal to it, so `warnings.include?("...")` still works. An error without a location, such as an `OptionError`, has `nil` for `type` and `location`.
 
 ### Development
 

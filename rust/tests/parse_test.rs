@@ -2,6 +2,12 @@ use lightningcss_ffi::{lightningcss_parse, lightningcss_result_free, LightningCs
 
 use std::ffi::{CStr, CString};
 
+fn message_of(error: &str) -> String {
+  let parsed: serde_json::Value = serde_json::from_str(error).unwrap();
+
+  parsed["message"].as_str().unwrap().to_string()
+}
+
 fn parse(code: &str, options: &str) -> LightningCssResult {
   let code = CString::new(code).unwrap();
   let options = CString::new(options).unwrap();
@@ -17,7 +23,7 @@ fn answer(code: &str, options: &str) -> Result<serde_json::Value, String> {
 
     Ok(serde_json::from_str(json).unwrap())
   } else {
-    Err(unsafe { CStr::from_ptr(result.error) }.to_str().unwrap().to_string())
+    Err(message_of(unsafe { CStr::from_ptr(result.error) }.to_str().unwrap()))
   };
 
   unsafe { lightningcss_result_free(result) };
