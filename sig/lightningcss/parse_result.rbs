@@ -10,13 +10,13 @@ module LightningCSS
 
     attr_reader stylesheet: Hash[String, untyped]
 
-    attr_reader warnings: Array[String]
+    attr_reader warnings: Array[LightningCSS::Warning]
 
     # : (String, ?String?) -> LightningCSS::ParseResult
     def self.from_json: (String, ?String?) -> LightningCSS::ParseResult
 
-    # : (stylesheet: Hash[String, untyped], warnings: Array[String], ?source: String?) -> void
-    def initialize: (stylesheet: Hash[String, untyped], warnings: Array[String], ?source: String?) -> void
+    # : (stylesheet: Hash[String, untyped], warnings: Array[LightningCSS::Warning], ?source: String?) -> void
+    def initialize: (stylesheet: Hash[String, untyped], warnings: Array[LightningCSS::Warning], ?source: String?) -> void
 
     # : () -> LightningCSS::Node
     def root: () -> LightningCSS::Node

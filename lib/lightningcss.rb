@@ -3,6 +3,7 @@
 require "json"
 
 require_relative "lightningcss/version"
+require_relative "lightningcss/location"
 require_relative "lightningcss/errors"
 require_relative "lightningcss/backend"
 
@@ -14,6 +15,7 @@ rescue LoadError
 end
 
 require_relative "lightningcss/options"
+require_relative "lightningcss/warning"
 require_relative "lightningcss/result"
 require_relative "lightningcss/node"
 require_relative "lightningcss/parse_result"

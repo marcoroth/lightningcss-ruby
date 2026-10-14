@@ -1,0 +1,26 @@
+# Generated from lib/lightningcss/location.rb with RBS::Inline
+
+module LightningCSS
+  class Location < Data
+    attr_reader filename(): String?
+
+    attr_reader line(): Integer
+
+    attr_reader column(): Integer
+
+    def self.new: (String? filename, Integer line, Integer column) -> instance
+                | (filename: String?, line: Integer, column: Integer) -> instance
+
+    def self.members: () -> [ :filename, :line, :column ]
+
+    def members: () -> [ :filename, :line, :column ]
+  end
+
+  class Location
+    # : (Hash[String, untyped]) -> LightningCSS::Location
+    def self.from_hash: (Hash[String, untyped]) -> LightningCSS::Location
+
+    # : () -> String
+    def to_s: () -> String
+  end
+end

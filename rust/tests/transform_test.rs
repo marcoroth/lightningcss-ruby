@@ -9,11 +9,17 @@ use std::ptr;
 
 type Call = unsafe extern "C" fn(*const c_char, *const c_char) -> LightningCssResult;
 
+fn message_of(error: &str) -> String {
+  let parsed: serde_json::Value = serde_json::from_str(error).unwrap();
+
+  parsed["message"].as_str().unwrap().to_string()
+}
+
 fn answer(result: LightningCssResult) -> Result<String, String> {
   let outcome = if result.error.is_null() {
     Ok(unsafe { CStr::from_ptr(result.value) }.to_str().unwrap().to_string())
   } else {
-    Err(unsafe { CStr::from_ptr(result.error) }.to_str().unwrap().to_string())
+    Err(message_of(unsafe { CStr::from_ptr(result.error) }.to_str().unwrap()))
   };
 
   unsafe { lightningcss_result_free(result) };
@@ -119,7 +125,31 @@ fn transform_answers_an_error_for_css_it_could_not_read() {
 
   assert_eq!(
     answer,
-    Err("Expected identifier in class selector, got WhiteSpace(\" \") at :1:2".to_string())
+    Err("Expected identifier in class selector, got WhiteSpace(\" \")".to_string())
+  );
+}
+
+#[test]
+fn transform_answers_where_it_could_not_read_as_json() {
+  let code = CString::new(".a { color: red; }\n.b, { color: blue; }\n").unwrap();
+  let options = CString::new(r#"{"filename":"main.css"}"#).unwrap();
+  let result = unsafe { lightningcss_transform(code.as_ptr(), options.as_ptr()) };
+  let error: serde_json::Value =
+    serde_json::from_str(unsafe { CStr::from_ptr(result.error) }.to_str().unwrap()).unwrap();
+
+  unsafe { lightningcss_result_free(result) };
+
+  assert_eq!(
+    error,
+    serde_json::json!({
+      "message": "Invalid empty selector",
+      "type": "SelectorError",
+      "location": {
+        "filename": "main.css",
+        "line": 2,
+        "column": 4,
+      },
+    })
   );
 }
 

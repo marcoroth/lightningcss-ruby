@@ -6,6 +6,12 @@ const ENTRY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/fixtures/bundl
 const MISSING: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/fixtures/bundle/missing.css");
 const BROKEN: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/fixtures/bundle/broken.css");
 
+fn message_of(error: &str) -> String {
+  let parsed: serde_json::Value = serde_json::from_str(error).unwrap();
+
+  parsed["message"].as_str().unwrap().to_string()
+}
+
 fn bundle(path: &str, options: &str) -> Result<String, String> {
   let path = CString::new(path).unwrap();
   let options = CString::new(options).unwrap();
@@ -15,7 +21,7 @@ fn bundle(path: &str, options: &str) -> Result<String, String> {
   let outcome = if result.error.is_null() {
     Ok(unsafe { CStr::from_ptr(result.value) }.to_str().unwrap().to_string())
   } else {
-    Err(unsafe { CStr::from_ptr(result.error) }.to_str().unwrap().to_string())
+    Err(message_of(unsafe { CStr::from_ptr(result.error) }.to_str().unwrap()))
   };
 
   unsafe { lightningcss_result_free(result) };

@@ -18,11 +18,10 @@ use std::ptr;
 use std::sync::{Arc, RwLock};
 
 use lightningcss::bundler::{BundleErrorKind, Bundler, FileProvider};
-use lightningcss::error::Error;
 use lightningcss::stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleAttribute, StyleSheet};
 use lightningcss::visitor::Visit;
 
-use crate::options::{ParseResult, TransformOptions, TransformResult};
+use crate::options::{Diagnostic, ParseResult, TransformOptions, TransformResult};
 use crate::scope::Scoper;
 
 pub const VERSION: &str = env!("GEM_VERSION");
@@ -57,7 +56,7 @@ impl LightningCssResult {
   fn err(failure: Failure) -> Self {
     Self {
       value: ptr::null_mut(),
-      error: into_c_string(failure.message),
+      error: into_c_string(serde_json::to_string(&failure.diagnostic).unwrap_or(failure.diagnostic.message)),
       code: failure.code,
     }
   }
@@ -65,42 +64,35 @@ impl LightningCssResult {
 
 pub struct Failure {
   code: LightningCssErrorCode,
-  message: String,
-}
-
-fn describe<T: std::fmt::Display>(error: &Error<T>) -> String {
-  match &error.loc {
-    Some(loc) => format!("{} at {}:{}:{}", error.kind, loc.filename, loc.line + 1, loc.column),
-    None => error.kind.to_string(),
-  }
+  diagnostic: Diagnostic,
 }
 
 impl Failure {
-  fn parse(message: impl Into<String>) -> Self {
+  fn parse(diagnostic: impl Into<Diagnostic>) -> Self {
     Self {
       code: LightningCssErrorCode::Parse,
-      message: message.into(),
+      diagnostic: diagnostic.into(),
     }
   }
 
-  fn option(message: impl Into<String>) -> Self {
+  fn option(diagnostic: impl Into<Diagnostic>) -> Self {
     Self {
       code: LightningCssErrorCode::Option,
-      message: message.into(),
+      diagnostic: diagnostic.into(),
     }
   }
 
-  fn bundle(message: impl Into<String>) -> Self {
+  fn bundle(diagnostic: impl Into<Diagnostic>) -> Self {
     Self {
       code: LightningCssErrorCode::Bundle,
-      message: message.into(),
+      diagnostic: diagnostic.into(),
     }
   }
 
-  fn internal(message: impl Into<String>) -> Self {
+  fn internal(diagnostic: impl Into<Diagnostic>) -> Self {
     Self {
       code: LightningCssErrorCode::Internal,
-      message: message.into(),
+      diagnostic: diagnostic.into(),
     }
   }
 }
@@ -143,11 +135,12 @@ fn parse_source<'i>(code: &'i str, options: &TransformOptions) -> Result<ParseRe
     ..ParserOptions::default()
   };
 
-  let stylesheet = StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(describe(&error)))?;
+  let stylesheet =
+    StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(Diagnostic::from_error(&error)))?;
 
   let warnings = collected
     .read()
-    .map(|warnings| warnings.iter().map(describe).collect())
+    .map(|warnings| warnings.iter().map(Diagnostic::from_error).collect())
     .unwrap_or_default();
 
   Ok(ParseResult { stylesheet, warnings })
@@ -170,7 +163,8 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
     ..ParserOptions::default()
   };
 
-  let mut stylesheet = StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(describe(&error)))?;
+  let mut stylesheet =
+    StyleSheet::parse(code, parser_options).map_err(|error| Failure::parse(Diagnostic::from_error(&error)))?;
 
   if let Some(fragment) = &options.scope {
     let mut scoper = Scoper::parse(fragment).map_err(Failure::option)?;
@@ -209,7 +203,7 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
 
   let warnings = collected
     .read()
-    .map(|warnings| warnings.iter().map(describe).collect())
+    .map(|warnings| warnings.iter().map(Diagnostic::from_error).collect())
     .unwrap_or_default();
 
   Ok(TransformResult {
@@ -240,8 +234,8 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
   let mut stylesheet = bundler
     .bundle(std::path::Path::new(path))
     .map_err(|error| match &error.kind {
-      BundleErrorKind::ParserError(_) => Failure::parse(describe(&error)),
-      _ => Failure::bundle(describe(&error)),
+      BundleErrorKind::ParserError(_) => Failure::parse(Diagnostic::from_error(&error)),
+      _ => Failure::bundle(Diagnostic::from_error(&error)),
     })?;
 
   if let Some(fragment) = &options.scope {
@@ -278,7 +272,7 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
 
   let warnings = collected
     .read()
-    .map(|warnings| warnings.iter().map(describe).collect())
+    .map(|warnings| warnings.iter().map(Diagnostic::from_error).collect())
     .unwrap_or_default();
 
   Ok(TransformResult {
@@ -295,7 +289,8 @@ fn transform_attribute(code: &str, options: &TransformOptions) -> Result<Transfo
     ..ParserOptions::default()
   };
 
-  let mut attribute = StyleAttribute::parse(code, parser_options).map_err(|error| Failure::parse(describe(&error)))?;
+  let mut attribute =
+    StyleAttribute::parse(code, parser_options).map_err(|error| Failure::parse(Diagnostic::from_error(&error)))?;
 
   let targets = options.to_targets().map_err(Failure::option)?;
 
