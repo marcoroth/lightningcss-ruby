@@ -119,7 +119,7 @@ fn transform_answers_an_error_for_css_it_could_not_read() {
 
   assert_eq!(
     answer,
-    Err("Expected identifier in class selector, got WhiteSpace(\" \") at :0:2".to_string())
+    Err("Expected identifier in class selector, got WhiteSpace(\" \") at :1:2".to_string())
   );
 }
 
