@@ -38,7 +38,7 @@ module LightningCSS
     test "raises on a stylesheet it cannot read" do
       error = assert_raises(LightningCSS::ParseError) { LightningCSS.parse(". { color: red }") }
 
-      assert_equal 'Expected identifier in class selector, got WhiteSpace(" ") at :0:2', error.message
+      assert_equal 'Expected identifier in class selector, got WhiteSpace(" ") at :1:2', error.message
     end
 
     test "recovers when asked to" do

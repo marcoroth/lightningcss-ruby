@@ -5,7 +5,7 @@ require "test_helper"
 module LightningCSS
   class WarningsTest < Minitest::Spec
     DEEP = ".a:deep(.b) { color: red }"
-    WARNING = "'deep' is not recognized as a valid pseudo-class. Did you mean '::deep' (pseudo-element) or is this a typo? at :0:9"
+    WARNING = "'deep' is not recognized as a valid pseudo-class. Did you mean '::deep' (pseudo-element) or is this a typo? at :1:9"
 
     test "reports what it kept but did not understand" do
       result = LightningCSS.transform(DEEP, minify: true)
