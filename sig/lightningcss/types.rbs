@@ -1,17 +1,19 @@
 # Note: This file is hand written, `rbs-inline` does not generate this file.
 
 module LightningCSS
+  type version = Integer | Float | String
+
   type browsers = {
-    ?android: Integer,
-    ?chrome: Integer,
-    ?edge: Integer,
-    ?firefox: Integer,
-    ?ie: Integer,
-    ?ios: Integer,
-    ?ios_saf: Integer,
-    ?opera: Integer,
-    ?safari: Integer,
-    ?samsung: Integer
+    ?android: version,
+    ?chrome: version,
+    ?edge: version,
+    ?firefox: version,
+    ?ie: version,
+    ?ios: version,
+    ?ios_saf: version,
+    ?opera: version,
+    ?safari: version,
+    ?samsung: version
   }
 
   type css_modules = bool | {

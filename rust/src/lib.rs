@@ -172,7 +172,7 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
       .map_err(|error| Failure::internal(format!("Failed to scope stylesheet: {error:?}")))?;
   }
 
-  let targets = options.to_targets();
+  let targets = options.to_targets().map_err(Failure::option)?;
 
   stylesheet
     .minify(MinifyOptions {
@@ -244,7 +244,7 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
       .map_err(|error| Failure::internal(format!("Failed to scope stylesheet: {error:?}")))?;
   }
 
-  let targets = options.to_targets();
+  let targets = options.to_targets().map_err(Failure::option)?;
 
   stylesheet
     .minify(MinifyOptions {
@@ -289,7 +289,7 @@ fn transform_attribute(code: &str, options: &TransformOptions) -> Result<Transfo
 
   let mut attribute = StyleAttribute::parse(code, parser_options).map_err(|error| Failure::parse(error.to_string()))?;
 
-  let targets = options.to_targets();
+  let targets = options.to_targets().map_err(Failure::option)?;
 
   attribute.minify(MinifyOptions {
     targets,

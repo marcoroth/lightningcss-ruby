@@ -57,12 +57,24 @@ LightningCSS.minify(".a { color: #ff0000 }")
 
 #### Targeting browsers
 
-Give the browsers you support, each as its major version. Anything they cannot read is lowered, with the original kept after it so that a browser which understands it still wins.
+Give the browsers you support, each with the oldest version you support. Anything they cannot read is lowered, with the original kept after it so that a browser which understands it still wins.
 
 ```ruby
 LightningCSS.transform(".a { color: lab(50% 40 59) }", targets: { chrome: 80 }, minify: true).code
 #=> ".a{color:#bf5702;color:lab(50% 40 59)}"
 ```
+
+A version is an `Integer` for a major version, or a `Float` or `String` for a minor or patch release. Several features first shipped in a minor Safari release, so the minor version can change the output.
+
+```ruby
+LightningCSS.transform(".a { color: oklch(60% .2 30) }", targets: { safari: 15 }, minify: true).code
+#=> ".a{color:lab(51.6908% 61.9679 48.0969)}"
+
+LightningCSS.transform(".a { color: oklch(60% .2 30) }", targets: { safari: "15.4" }, minify: true).code
+#=> ".a{color:oklch(60% .2 30)}"
+```
+
+Prefer a `String` for a minor version above 9, since `16.10` as a `Float` is `16.1`.
 
 #### Bundling
 

@@ -10,7 +10,7 @@ pub struct TransformOptions {
   pub filename: Option<String>,
   pub minify: bool,
   pub error_recovery: bool,
-  pub targets: Option<HashMap<String, u32>>,
+  pub targets: Option<HashMap<String, Version>>,
   pub css_modules: Option<CssModulesOptions>,
   pub scope: Option<String>,
 }
@@ -60,16 +60,61 @@ impl CssModulesOptions {
   }
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum Version {
+  Major(u32),
+  Float(f64),
+  String(String),
+}
+
+impl Version {
+  /// Encodes a version the way Lightning CSS reads it, as `major << 16 | minor << 8 | patch`.
+  fn encode(&self) -> Option<u32> {
+    match self {
+      Version::Major(major) => (*major <= 0xffff).then(|| major << 16),
+      Version::Float(float) => Self::parse(&float.to_string()),
+      Version::String(string) => Self::parse(string),
+    }
+  }
+
+  fn parse(version: &str) -> Option<u32> {
+    let mut parts = version.trim().split('.');
+
+    let major: u16 = parts.next()?.parse().ok()?;
+    let minor: u8 = parts.next().map_or(Some(0), |part| part.parse().ok())?;
+    let patch: u8 = parts.next().map_or(Some(0), |part| part.parse().ok())?;
+
+    if parts.next().is_some() {
+      return None;
+    }
+
+    Some(u32::from(major) << 16 | u32::from(minor) << 8 | u32::from(patch))
+  }
+
+  fn describe(&self) -> String {
+    match self {
+      Version::Major(major) => major.to_string(),
+      Version::Float(float) => float.to_string(),
+      Version::String(string) => format!("{string:?}"),
+    }
+  }
+}
+
 impl TransformOptions {
-  pub fn to_targets(&self) -> Targets {
+  pub fn to_targets(&self) -> Result<Targets, String> {
     let Some(versions) = &self.targets else {
-      return Targets::default();
+      return Ok(Targets::default());
     };
 
     let mut browsers = Browsers::default();
 
     for (name, version) in versions {
-      let encoded = Some(version << 16);
+      let encoded = Some(
+        version
+          .encode()
+          .ok_or_else(|| format!("Invalid version {} for {name} in targets", version.describe()))?,
+      );
 
       match name.as_str() {
         "android" => browsers.android = encoded,
@@ -85,7 +130,7 @@ impl TransformOptions {
       }
     }
 
-    Targets::from(browsers)
+    Ok(Targets::from(browsers))
   }
 }
 
