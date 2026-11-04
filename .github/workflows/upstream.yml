@@ -60,7 +60,7 @@ jobs:
           fi
 
           crate_version=$(gh api "repos/${UPSTREAM_REPOSITORY}/contents/Cargo.toml?ref=v${upstream_version}" \
-            --jq '.content' | base64 -d | awk '/^\[package\]/{p=1} p && /^version = /{gsub(/version = |"/, ""); print; exit}')
+            --jq '.content' | base64 -d | awk '/^\[package\]/{p=1} p && /^version = /{gsub(/version = |"/, ""); print; p=0}')
 
           if [[ -z "${crate_version}" ]]; then
             echo "::error::could not read the crate version from Cargo.toml at v${upstream_version}"
