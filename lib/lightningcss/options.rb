@@ -16,7 +16,10 @@ module LightningCSS
       :error_recovery,
       :targets,
       :css_modules,
-      :scope
+      :scope,
+      :source_map,
+      :input_source_map,
+      :project_root
     ].freeze #: Array[Symbol]
 
     STYLE_ATTRIBUTE = [
@@ -36,7 +39,9 @@ module LightningCSS
       :error_recovery,
       :targets,
       :css_modules,
-      :scope
+      :scope,
+      :source_map,
+      :project_root
     ].freeze #: Array[Symbol]
 
     attr_reader :to_h #: Hash[Symbol, untyped]

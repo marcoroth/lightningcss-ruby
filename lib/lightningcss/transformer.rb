@@ -14,14 +14,14 @@ module LightningCSS
   class Transformer
     attr_reader :options #: Hash[Symbol, untyped]
 
-    #: (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> void
+    #: (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> void
     def initialize(**options)
       @options = options.transform_keys(&:to_sym).freeze
 
       freeze
     end
 
-    #: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+    #: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> LightningCSS::Result
     def transform(code, **overrides)
       LightningCSS.transform(code, **options, **overrides)
     end
@@ -33,7 +33,7 @@ module LightningCSS
       LightningCSS.parse(code, **options.slice(*Options::PARSE), **overrides)
     end
 
-    #: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+    #: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?project_root: String?) -> LightningCSS::Result
     def bundle(path, **overrides)
       LightningCSS.bundle(path, **options, **overrides)
     end
@@ -48,7 +48,7 @@ module LightningCSS
       transform(code, **overrides, minify: true).code
     end
 
-    #: (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Transformer
+    #: (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> LightningCSS::Transformer
     def with(**overrides)
       self.class.new(**options, **overrides)
     end

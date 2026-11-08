@@ -20,6 +20,7 @@ use std::sync::{Arc, RwLock};
 use lightningcss::bundler::{BundleErrorKind, Bundler, FileProvider};
 use lightningcss::stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleAttribute, StyleSheet};
 use lightningcss::visitor::Visit;
+use parcel_sourcemap::SourceMap;
 
 use crate::options::{Diagnostic, ParseResult, TransformOptions, TransformResult};
 use crate::scope::Scoper;
@@ -146,8 +147,49 @@ fn parse_source<'i>(code: &'i str, options: &TransformOptions) -> Result<ParseRe
   Ok(ParseResult { stylesheet, warnings })
 }
 
+fn read_input_source_map(options: &TransformOptions) -> Result<Option<SourceMap>, Failure> {
+  let Some(json) = &options.input_source_map else {
+    return Ok(None);
+  };
+
+  if !options.source_map {
+    return Err(Failure::option("input_source_map needs source_map: true"));
+  }
+
+  SourceMap::from_json("/", json)
+    .map(Some)
+    .map_err(|error| Failure::option(format!("Invalid input source map: {error}")))
+}
+
+fn new_source_map(options: &TransformOptions) -> Option<SourceMap> {
+  options
+    .source_map
+    .then(|| SourceMap::new(options.project_root.as_deref().unwrap_or("/")))
+}
+
+fn serialize_source_map(
+  source_map: Option<SourceMap>,
+  input_source_map: Option<SourceMap>,
+) -> Result<Option<String>, Failure> {
+  let Some(mut source_map) = source_map else {
+    return Ok(None);
+  };
+
+  if let Some(mut input_source_map) = input_source_map {
+    source_map
+      .extends(&mut input_source_map)
+      .map_err(|error| Failure::option(format!("Invalid input source map: {error}")))?;
+  }
+
+  source_map
+    .to_json(None)
+    .map(Some)
+    .map_err(|error| Failure::internal(format!("Failed to serialize source map: {error}")))
+}
+
 fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformResult, Failure> {
   let filename = options.filename.clone().unwrap_or_default();
+  let input_source_map = read_input_source_map(options)?;
   let css_modules = match &options.css_modules {
     Some(modules) => Some(modules.to_config().map_err(Failure::option)?),
     None => None,
@@ -183,16 +225,27 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
     })
     .map_err(|error| Failure::internal(format!("Failed to minify: {error}")))?;
 
+  let mut source_map = new_source_map(options);
+
+  if let Some(source_map) = &mut source_map {
+    source_map.add_source(&filename);
+    source_map
+      .set_source_content(0, code)
+      .map_err(|error| Failure::internal(format!("Failed to add source: {error}")))?;
+  }
+
   let printed = stylesheet
     .to_css(PrinterOptions {
       minify: options.minify,
-      source_map: None,
-      project_root: None,
+      source_map: source_map.as_mut(),
+      project_root: options.project_root.as_deref(),
       targets,
       analyze_dependencies: None,
       pseudo_classes: None,
     })
     .map_err(|error| Failure::internal(format!("Failed to print: {error}")))?;
+
+  let map = serialize_source_map(source_map, input_source_map)?;
 
   let exports = printed.exports.map(|exports| {
     exports
@@ -209,6 +262,7 @@ fn transform_source(code: &str, options: &TransformOptions) -> Result<TransformR
   Ok(TransformResult {
     code: printed.code,
     exports,
+    map,
     warnings,
   })
 }
@@ -255,13 +309,30 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
     })
     .map_err(|error| Failure::internal(format!("Failed to minify: {error}")))?;
 
+  let mut source_map = new_source_map(options);
+
+  if let Some(source_map) = &mut source_map {
+    for source in &stylesheet.sources {
+      let content = std::fs::read_to_string(source).map_err(|error| Failure::bundle(format!("{source}: {error}")))?;
+      let index = source_map.add_source(source);
+
+      source_map
+        .set_source_content(index as usize, &content)
+        .map_err(|error| Failure::internal(format!("Failed to add source: {error}")))?;
+    }
+  }
+
   let printed = stylesheet
     .to_css(PrinterOptions {
       minify: options.minify,
+      source_map: source_map.as_mut(),
+      project_root: options.project_root.as_deref(),
       targets,
       ..PrinterOptions::default()
     })
     .map_err(|error| Failure::internal(format!("Failed to print: {error}")))?;
+
+  let map = serialize_source_map(source_map, None)?;
 
   let exports = printed.exports.map(|exports| {
     exports
@@ -278,6 +349,7 @@ fn bundle_source(path: &str, options: &TransformOptions) -> Result<TransformResu
   Ok(TransformResult {
     code: printed.code,
     exports,
+    map,
     warnings,
   })
 }
@@ -310,6 +382,7 @@ fn transform_attribute(code: &str, options: &TransformOptions) -> Result<Transfo
   Ok(TransformResult {
     code: printed.code,
     exports: None,
+    map: None,
     warnings: Vec::new(),
   })
 }
