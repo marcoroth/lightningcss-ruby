@@ -42,7 +42,7 @@ require_relative "lightningcss/transformer"
 # set of them to reuse across many stylesheets.
 #
 module LightningCSS
-  #: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+  #: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> LightningCSS::Result
   def self.transform(code, **options)
     Result.from_json(Backend.transform(code.to_s, Options.serialize(options)))
   end
@@ -54,7 +54,7 @@ module LightningCSS
     ParseResult.from_json(Backend.parse(code.to_s, serialized), code.to_s)
   end
 
-  #: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+  #: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?project_root: String?) -> LightningCSS::Result
   def self.bundle(path, **options)
     serialized = Options.serialize(options, Options::BUNDLE, "a bundle")
 

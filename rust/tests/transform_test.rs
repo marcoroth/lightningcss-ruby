@@ -154,12 +154,47 @@ fn transform_answers_where_it_could_not_read_as_json() {
 }
 
 #[test]
+fn transform_answers_a_source_map_when_asked() {
+  let answer = call(
+    lightningcss_transform,
+    ".a {\n  user-select: none;\n}\n\n.b {\n  color: red;\n}\n",
+    r#"{"filename":"main.css","source_map":true,"minify":true}"#,
+  )
+  .unwrap();
+  let parsed: serde_json::Value = serde_json::from_str(&answer).unwrap();
+  let map: serde_json::Value = serde_json::from_str(parsed["map"].as_str().unwrap()).unwrap();
+
+  assert_eq!(map["mappings"], "AAAA,oBAIA");
+  assert_eq!(map["sources"], serde_json::json!(["main.css"]));
+}
+
+#[test]
+fn transform_leaves_the_source_map_out_when_not_asked() {
+  let answer = call(lightningcss_transform, ".a{}", "{}").unwrap();
+  let parsed: serde_json::Value = serde_json::from_str(&answer).unwrap();
+
+  assert!(parsed.get("map").is_none());
+}
+
+#[test]
+fn transform_refuses_an_input_source_map_it_cannot_read() {
+  assert_eq!(
+    code_of(
+      lightningcss_transform,
+      ".a{}",
+      r#"{"source_map":true,"input_source_map":"nope"}"#
+    ),
+    LightningCssErrorCode::Option
+  );
+}
+
+#[test]
 fn transform_refuses_an_option_it_does_not_read() {
   let answer = call(lightningcss_transform, ".a {}", r#"{"nonsense":true}"#);
 
   assert_eq!(
     answer,
-    Err("Invalid options: unknown field `nonsense`, expected one of `filename`, `minify`, `error_recovery`, `targets`, `css_modules`, `scope` at line 1 column 11".to_string())
+    Err("Invalid options: unknown field `nonsense`, expected one of `filename`, `minify`, `error_recovery`, `targets`, `css_modules`, `scope`, `source_map`, `input_source_map`, `project_root` at line 1 column 11".to_string())
   );
 }
 

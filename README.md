@@ -144,6 +144,25 @@ LightningCSS.transform(".x:not(.y) { color: red }", scope: "[s]", minify: true).
 #=> ".x:not(.y)[s]{color:red}"
 ```
 
+#### Source maps
+
+Pass `source_map: true` and the result has a `map`, a JSON string. Give a `filename` too, since that is what the map names as its source.
+
+```ruby
+result = LightningCSS.transform(".a { color: red }", filename: "main.css", source_map: true, minify: true)
+
+result.map
+#=> "{\"version\":3,\"sourceRoot\":null,\"mappings\":\"AAAA\",\"sources\":[\"main.css\"],...}"
+```
+
+For CSS that was compiled from something else, pass that step's map as `input_source_map` and the result maps back to the original sources. A map it cannot read raises a `LightningCSS::OptionError`.
+
+```ruby
+LightningCSS.transform(sass_output, filename: "main.css", source_map: true, input_source_map: sass_map)
+```
+
+`bundle` takes `source_map` as well, and adds every file it read to `sources` with its contents. `project_root` sets what the `sources` are relative to. A bundle reads many files, so it does not take a single `input_source_map`, and a style attribute has no source map.
+
 #### Style attributes
 
 A style attribute is the list of declarations an element carries inline. It has no selectors and no at-rules around it, so it is its own grammar.
@@ -280,14 +299,17 @@ It answers `call` as well, so it can be handed to anything expecting something c
 
 ### Options
 
-| Option           | Type           | Description                                                                            |
-|------------------|----------------|----------------------------------------------------------------------------------------|
-| `filename`       | `String`       | The name to use in errors and warnings.                                                |
-| `minify`         | `bool`         | Whether to print the result as small as it goes.                                       |
-| `error_recovery` | `bool`         | Whether to carry on past a rule it cannot read. Off by default, so such a rule raises. |
-| `targets`        | `Hash`         | The browsers being compiled for, each with the oldest version supported.               |
-| `css_modules`    | `bool`, `Hash` | Whether to compile as a CSS module, and how.                                           |
-| `scope`          | `String`       | A selector fragment to narrow every rule by.                                           |
+| Option             | Type           | Description                                                                            |
+|--------------------|----------------|----------------------------------------------------------------------------------------|
+| `filename`         | `String`       | The name to use in errors and warnings.                                                |
+| `minify`           | `bool`         | Whether to print the result as small as it goes.                                       |
+| `error_recovery`   | `bool`         | Whether to carry on past a rule it cannot read. Off by default, so such a rule raises. |
+| `targets`          | `Hash`         | The browsers being compiled for, each with the oldest version supported.               |
+| `css_modules`      | `bool`, `Hash` | Whether to compile as a CSS module, and how.                                           |
+| `scope`            | `String`       | A selector fragment to narrow every rule by.                                           |
+| `source_map`       | `bool`         | Whether to generate a source map. Off by default.                                      |
+| `input_source_map` | `String`       | A source map as JSON to chain through, such as one from Sass. Needs `source_map`.      |
+| `project_root`     | `String`       | What the `sources` of a source map are relative to.                                    |
 
 An option nobody reads is refused:
 
@@ -310,6 +332,9 @@ result.to_s
 #=> ".a{color:red}"
 
 result.exports
+#=> nil
+
+result.map
 #=> nil
 
 result.warnings

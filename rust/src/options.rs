@@ -14,6 +14,9 @@ pub struct TransformOptions {
   pub targets: Option<HashMap<String, Version>>,
   pub css_modules: Option<CssModulesOptions>,
   pub scope: Option<String>,
+  pub source_map: bool,
+  pub input_source_map: Option<String>,
+  pub project_root: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -166,6 +169,8 @@ pub struct TransformResult {
   pub code: String,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub exports: Option<HashMap<String, String>>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub map: Option<String>,
   pub warnings: Vec<Diagnostic>,
 }
 

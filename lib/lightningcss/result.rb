@@ -13,6 +13,7 @@ module LightningCSS
   class Result
     attr_reader :code #: String
     attr_reader :exports #: Hash[String, String]?
+    attr_reader :map #: String?
     attr_reader :warnings #: Array[LightningCSS::Warning]
 
     #: (String) -> LightningCSS::Result
@@ -22,14 +23,16 @@ module LightningCSS
       new(
         code: parsed.fetch("code"),
         exports: parsed["exports"],
+        map: parsed["map"],
         warnings: parsed.fetch("warnings").map { |warning| Warning.from_hash(warning) }
       )
     end
 
-    #: (code: String, warnings: Array[LightningCSS::Warning], ?exports: Hash[String, String]?) -> void
-    def initialize(code:, warnings:, exports: nil)
+    #: (code: String, warnings: Array[LightningCSS::Warning], ?exports: Hash[String, String]?, ?map: String?) -> void
+    def initialize(code:, warnings:, exports: nil, map: nil)
       @code = code
       @exports = exports
+      @map = map
       @warnings = warnings.freeze
 
       freeze

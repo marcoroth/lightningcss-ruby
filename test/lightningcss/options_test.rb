@@ -45,7 +45,7 @@ module LightningCSS
     end
 
     test "knows what the native library reads" do
-      assert_equal [:filename, :minify, :error_recovery, :targets, :css_modules, :scope], Options::KNOWN
+      assert_equal [:filename, :minify, :error_recovery, :targets, :css_modules, :scope, :source_map, :input_source_map, :project_root], Options::KNOWN
     end
 
     test "takes what it is allowed to read as an argument, so no option name can collide with it" do
@@ -74,7 +74,7 @@ module LightningCSS
     end
 
     test "knows what a bundle reads" do
-      assert_equal [:minify, :error_recovery, :targets, :css_modules, :scope], Options::BUNDLE
+      assert_equal [:minify, :error_recovery, :targets, :css_modules, :scope, :source_map, :project_root], Options::BUNDLE
     end
 
     test "refuses an option that has nothing to act on" do

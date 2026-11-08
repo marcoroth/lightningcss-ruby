@@ -13,19 +13,19 @@ module LightningCSS
   class Transformer
     attr_reader options: Hash[Symbol, untyped]
 
-    # : (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> void
-    def initialize: (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> void
+    # : (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> void
+    def initialize: (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> void
 
-    # : (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
-    def transform: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+    # : (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> LightningCSS::Result
+    def transform: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> LightningCSS::Result
 
     alias call transform
 
     # : (String, ?filename: String?, ?error_recovery: bool) -> LightningCSS::ParseResult
     def parse: (String, ?filename: String?, ?error_recovery: bool) -> LightningCSS::ParseResult
 
-    # : (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
-    def bundle: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Result
+    # : (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?project_root: String?) -> LightningCSS::Result
+    def bundle: (String, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?project_root: String?) -> LightningCSS::Result
 
     # : (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?) -> LightningCSS::Result
     def transform_style_attribute: (String, ?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?) -> LightningCSS::Result
@@ -33,8 +33,8 @@ module LightningCSS
     # : (String, ?filename: String?, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> String
     def minify: (String, ?filename: String?, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> String
 
-    # : (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Transformer
-    def with: (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?) -> LightningCSS::Transformer
+    # : (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> LightningCSS::Transformer
+    def with: (?filename: String?, ?minify: bool, ?error_recovery: bool, ?targets: browsers?, ?css_modules: css_modules?, ?scope: String?, ?source_map: bool, ?input_source_map: String?, ?project_root: String?) -> LightningCSS::Transformer
 
     # : () -> String
     def inspect: () -> String
